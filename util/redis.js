@@ -25,21 +25,21 @@ module.exports = {
 		})}
 	},
 	z: {
-		add: promisify(client.zadd),
-		range: promisify(client.zrange),
-		rangeByLex: promisify(client.zrangebylex),
-		rangeByScore: promisify(client.zrangebyscore),
-		rem: promisify(client.zrem),
-		scan: promisify(client.zscan)
+		add: promisify(client.zadd).bind(client),
+		range: promisify(client.zrange).bind(client),
+		rangeByLex: promisify(client.zrangebylex).bind(client),
+		rangeByScore: promisify(client.zrangebyscore).bind(client),
+		rem: promisify(client.zrem).bind(client),
+		scan: promisify(client.zscan).bind(client)
 	},
 	h: {
-		del: promisify(client.hdel),
-		keys: promisify(client.hkeys),
-		get: promisify(client.hget),
-		getAll: promisify(client.hgetall)
+		del: promisify(client.hdel).bind(client),
+		keys: promisify(client.hkeys).bind(client),
+		get: promisify(client.hget).bind(client),
+		getAll: promisify(client.hgetall).bind(client)
 	},
 	hm: {
-		get: promisify(client.hmget),
-		set: promisify(client.hmset)
+		get: promisify(client.hmget).bind(client),
+		set: promisify(client.hmset).bind(client)
 	}
 };
