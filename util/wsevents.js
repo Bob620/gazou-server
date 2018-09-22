@@ -21,10 +21,7 @@ module.exports = {
 	},
 	authenticate: (message, data) => {
 		try {
-			data.user = {
-				id: '1234',
-				perms: 'upload'
-			}
+
 		} catch(err) {
 			throw {
 				event: 'authenticate',

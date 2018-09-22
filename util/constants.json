@@ -1,0 +1,11 @@
+{
+  "redis": {
+    "DOMAIN": "gazou",
+    "IMAGES": "images",
+    "images": {
+      "TIMESEARCH": "timesearch",
+      "IMAGES": "images",
+      "METADATA": "metadata"
+    }
+  }
+}
