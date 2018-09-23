@@ -3,9 +3,11 @@
     "DOMAIN": "gazou",
     "IMAGES": "images",
     "images": {
-      "TIMESEARCH": "timesearch",
-      "IMAGES": "images",
       "METADATA": "metadata"
+    },
+    "SEARCH": "search",
+    "search": {
+      "TIME": "time"
     }
   }
 }

@@ -8,7 +8,9 @@ class Sockets {
 
 		wss.on('connection', ws => {
 			let data = {
-				user: undefined
+				user: {
+					uuid: 'bb620'
+				}
 			};
 
 			ws.on('message', async message => {
@@ -20,8 +22,18 @@ class Sockets {
 				};
 
 				try {
-					if (WSEvents[message.event])
-						responseMessage.data = await WSEvents[message.event](message.data, data);
+					const eventStructure = message.event.split('.');
+					let event = WSEvents;
+					for (let i = 0; i < eventStructure.length; i++)
+						if (event[eventStructure[i]])
+							event = event[eventStructure[i]];
+						else
+							throw {
+								event: message.event,
+								message: 'Unknown event type'
+							};
+
+					responseMessage.data = await event(message.data, data);
 				} catch(err) {
 					responseMessage = {
 						event: 'error',
@@ -35,3 +47,5 @@ class Sockets {
 		});
 	}
 }
+
+module.exports = Sockets;

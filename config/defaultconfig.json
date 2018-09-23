@@ -1,3 +1,5 @@
 {
-  "redisSettings": {}
+  "redisSettings": {},
+  "imageUrl": "http://i.bobco.moe",
+  "uploadUrl": "https://gazou.bobco.moe"
 }
