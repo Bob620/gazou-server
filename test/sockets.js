@@ -1,6 +1,5 @@
-const EventEmitter = require('events');
 const Sockets = require('../sockets');
-let totalTests = 12;
+let totalTests = 16;
 let passedTests = 0;
 let completedTests = 0;
 
@@ -68,7 +67,7 @@ class wssEmulator extends EmitterEmulator {
 
 	sendRemoveSingleImage(uuid, callback) {
 		this.data.ws.emit('message', {
-			event: 'remove',
+			event: 'remove.single',
 			data: {
 				uuid
 			},
@@ -78,7 +77,7 @@ class wssEmulator extends EmitterEmulator {
 
 	sendRemoveBatchImage(uuids, callback) {
 		this.data.ws.emit('message', {
-			event: 'remove',
+			event: 'remove.batch',
 			data: {
 				uuids
 			},
@@ -124,6 +123,32 @@ class wssEmulator extends EmitterEmulator {
 			callback: `sendCustomEvent.${event}${callback ? `.${callback}` : ''}`
 		});
 	}
+
+	sendSearchDateModified(min, max, count=10, startPos=0, callback) {
+		this.data.ws.emit('message', {
+			event: 'search.dateModified',
+			data: {
+				min,
+				max,
+				count,
+				startPos
+			},
+			callback: `sendSearchDateModified.${callback ? `.${callback}` : ''}`
+		});
+	}
+
+	sendSearchDateAdded(min, max, count=10, startPos=0, callback) {
+		this.data.ws.emit('message', {
+			event: 'search.dateAdded',
+			data: {
+				min,
+				max,
+				count,
+				startPos
+			},
+			callback: `sendSearchDateAdded.${callback ? `.${callback}` : ''}`
+		});
+	}
 }
 
 
@@ -131,15 +156,56 @@ const wss = new wssEmulator();
 const socket = new Sockets(wss);
 
 let testUuid = '';
+let testUuidList = [];
 
 wss.startConnection();
 
 wss.data.ws.on('send', message => {
 	message = JSON.parse(message);
 	switch (message.event) {
+		case 'search.dateModified':
+			if (message.callback.endsWith('test12')) {
+				console.log(`\nTest 12: ws.search.dateModified\nExpected: '3'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (Object.keys(message.data).length === 3) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test13')) {
+				console.log(`\nTest 13: ws.search.dateModified\nExpected: '0'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (Object.keys(message.data).length === 0) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			break;
+		case 'search.dateAdded':
+			if (message.callback.endsWith('test14')) {
+				console.log(`\nTest 14: ws.search.dateAdded\nExpected: '3'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (Object.keys(message.data).length === 3) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test15')) {
+				console.log(`\nTest 15: ws.search.dateAdded\nExpected: '0'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (Object.keys(message.data).length === 0) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			break;
 		case 'get.single':
 			if (message.callback.endsWith('test2')) {
-				console.log(`\nTest 2: ws.get.batch\nExpected: '{'${testUuid}': {...}}'\nGot: '${message.data[testUuid] ? `{'${testUuid}': {...}}` : `{}`}'`);
+				console.log(`\nTest 2: ws.get.single\nExpected: '{'${testUuid}': {...}}'\nGot: '${message.data[testUuid] ? `{'${testUuid}': {...}}` : `{}`}'`);
 				completedTests++;
 				if (Object.keys(message.data).length === 1 && message.data[testUuid]) {
 					passedTests++;
@@ -148,7 +214,7 @@ wss.data.ws.on('send', message => {
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test3')) {
-				console.log(`\nTest 3: ws.get.batch\nExpected: '{}'\nGot: '${message.data.length ? `{'?': {...}}` : `{}`}'`);
+				console.log(`\nTest 3: ws.get.single\nExpected: '{}'\nGot: '${message.data.length ? `{'?': {...}}` : `{}`}'`);
 				completedTests++;
 				if (Object.keys(message.data).length === 0) {
 					passedTests++;
@@ -159,9 +225,9 @@ wss.data.ws.on('send', message => {
 			break;
 		case 'get.batch':
 			if (message.callback.endsWith('test4')) {
-				console.log(`\nTest 4: ws.get.batch\nExpected: '{'${testUuid}': {...}}'\nGot: '${message.data[testUuid] ? `{'${testUuid}': {...}}` : `{}`}'`);
+				console.log(`\nTest 4: ws.get.batch\nExpected: '{'${testUuidList[0]}': {...}, '${testUuidList[1]}': {...}}'\nGot: '${message.data[testUuidList[0]] && message.data[testUuidList[1]] ? `{'${testUuidList[0]}': {...}, '${testUuidList[1]}': {...}}` : `{}`}'`);
 				completedTests++;
-				if (Object.keys(message.data).length === 1 && message.data[testUuid]) {
+				if (Object.keys(message.data).length === testUuidList.length && message.data[testUuidList[0]] && message.data[testUuidList[1]]) {
 					passedTests++;
 					console.log('PASS');
 				} else
@@ -179,7 +245,7 @@ wss.data.ws.on('send', message => {
 			break;
 		case 'update':
 			if (message.callback.endsWith('test6')) {
-				console.log(`\nTest 6: ws.update.uploader\nExpected: 'bob620'\nGot: '${message.data[testUuid].uploader}'`);
+				console.log(`\nTest 6: ws.update\nExpected: 'bob620'\nGot: '${message.data[testUuid].uploader}'`);
 				completedTests++;
 				if (message.data[testUuid].uploader === 'bob620') {
 					passedTests++;
@@ -188,7 +254,7 @@ wss.data.ws.on('send', message => {
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test7')) {
-				console.log(`\nTest 7: ws.update.uploader\nExpected: '0'\nGot: '${message.data[testUuid].uploader}'`);
+				console.log(`\nTest 7: ws.update\nExpected: '0'\nGot: '${message.data[testUuid].uploader}'`);
 				completedTests++;
 				if (message.data[testUuid].uploader === '0') {
 					passedTests++;
@@ -209,20 +275,20 @@ wss.data.ws.on('send', message => {
 			} else
 				console.log(message);
 			break;
-/*		case 'remove.single':
+		case 'remove.single':
 			if (message.callback.endsWith('test8')) {
-				console.log(`\nTest 8: ws.get.batch\nExpected: '{'1': {...}}'\nGot: '${message.data[1] ? `{'1': {...}}` : `{}`}'`);
+				console.log(`\nTest 8: ws.remove.single\nExpected: '1'\nGot: '${message.data.total}'`);
 				completedTests++;
-				if (Object.keys(message.data).length === 1 && message.data['1']) {
+				if (message.data.total === 1) {
 					passedTests++;
 					console.log('PASS');
 				} else
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test9')) {
-				console.log(`\nTest 9: ws.get.batch\nExpected: '{}'\nGot: '${message.data.length ? `{'?': {...}}` : `{}`}'`);
+				console.log(`\nTest 9: ws.remove.single\nExpected: '0'\nGot: '${message.data.total}'`);
 				completedTests++;
-				if (Object.keys(message.data).length === 0) {
+				if (message.data.total === 0) {
 					passedTests++;
 					console.log('PASS');
 				} else
@@ -231,26 +297,27 @@ wss.data.ws.on('send', message => {
 			break;
 		case 'remove.batch':
 			if (message.callback.endsWith('test10')) {
-				console.log(`\nTest 10: ws.get.batch\nExpected: '{'1': {...}}'\nGot: '${message.data[1] ? `{'1': {...}}` : `{}`}'`);
+				console.log(`\nTest 10: ws.remove.batch\nExpected: '${testUuidList.length}'\nGot: '${message.data.total}'`);
 				completedTests++;
-				if (Object.keys(message.data).length === 1 && message.data['1']) {
+				if (message.data.total === testUuidList.length) {
 					passedTests++;
 					console.log('PASS');
 				} else
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test11')) {
-				console.log(`\nTest 11: ws.get.batch\nExpected: '{}'\nGot: '${message.data.length ? `{'?': {...}}` : `{}`}'`);
+				console.log(`\nTest 11: ws.remove.batch\nExpected: '0'\nGot: '${message.data.total}'`);
 				completedTests++;
-				if (Object.keys(message.data).length === 0) {
+				if (message.data.total === 0) {
 					passedTests++;
 					console.log('PASS');
 				} else
 					console.log('FAIL');
 			}
 			break;
-*/
 		case 'upload':
+			if (message.callback.endsWith('testUuidList'))
+				testUuidList.push(message.data.uuid);
 			if (message.callback.endsWith('test0')) {
 				console.log(`\nTest 0: ws.upload\nExpected: 'https://gazou.bobco.moe/{?}'\nGot: '${message.data.link}'`);
 				completedTests++;
@@ -271,19 +338,34 @@ wss.data.ws.on('send', message => {
 });
 
 wss.sendAddNewImage('somehash', 'test0');
+wss.sendAddNewImage('somenewhash', 'testUuidList');
+wss.sendAddNewImage('someotherhash', 'testUuidList');
 setTimeout(() => {
 	wss.sendCustomEvent('Kappa', {}, 'test1');
 	wss.sendGetSingleMetadata(testUuid, 'test2');
 	wss.sendGetSingleMetadata('0', 'test3');
-	wss.sendGetBatchMetadata([testUuid], 'test4');
+	wss.sendGetBatchMetadata(testUuidList, 'test4');
 	wss.sendGetBatchMetadata(['0'], 'test5');
 	wss.sendUpdateMetadata(testUuid, {
 		uploader: 'bob620'
 	}, 'test6');
+
+	wss.sendSearchDateModified(0, Date.now(), 10, 0, 'test12');
+	wss.sendSearchDateModified(0, 100, 10, 0, 'test13');
+	wss.sendSearchDateAdded(0, Date.now(), 10, 0, 'test14');
+	wss.sendSearchDateAdded(0, 100, 10, 0, 'test15');
+
 	setTimeout(() => {
 		wss.sendUpdateMetadata(testUuid, {
 			uploader: ''
 		}, 'test7');
+
+		setTimeout(() => {
+			wss.sendRemoveSingleImage(testUuid, 'test8');
+			wss.sendRemoveSingleImage('invalidUuid', 'test9');
+			wss.sendRemoveBatchImage(testUuidList, 'test10');
+			wss.sendRemoveBatchImage(['invalidUuid1', 'invalidUuid2'], 'test11');
+		}, 1000);
 	}, 1000);
 }, 1000);
 

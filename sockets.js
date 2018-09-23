@@ -33,7 +33,13 @@ class Sockets {
 								message: 'Unknown event type'
 							};
 
-					responseMessage.data = await event(message.data, data);
+					if (typeof event === 'function')
+						responseMessage.data = await event(message.data, data);
+					else
+						throw {
+							event: message.event,
+							message: 'Unknown event type'
+						};
 				} catch(err) {
 					responseMessage = {
 						event: 'error',

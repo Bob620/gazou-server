@@ -1,6 +1,7 @@
 const uuidv1 = require('uuid/v1');
 
 const config = require('../config/config');
+const constants = require('./constants');
 
 const database = require('./database');
 const search = require('./search');
@@ -43,6 +44,7 @@ module.exports = {
 	update: async ({uuid, metadata: newMetadata}) => {
 		// Force metadata compliance if possible
 		await database.updateImageMetadata(uuid, forceMetadataCompliance(newMetadata));
+		newMetadata.dateModified = Date.now();
 
 		return {
 			[uuid]: await database.getImageMetadata(uuid)
@@ -56,7 +58,7 @@ module.exports = {
 		batch: async ({uuids}) => {
 			let removed = 0;
 			for (const uuid of uuids)
-				removed += await database.removeImageMetadata(uuid);
+				removed += (await database.removeImageMetadata(uuid))[0];
 			return {total: removed};
 		}
 	},
@@ -89,8 +91,21 @@ module.exports = {
 				message: 'No image hash provided'
 			};
 	},
-	search: async (message, data) => {
+	search: {
+		dateModified: async ({min, max, count=10, startPosition=0}) => {
+			count = count > constants.search.MAXMAX ? constants.search.MAXMAX : count;
+			return database.findImagesByScore(min, max, startPosition, count);
+		},
+		dateAdded: async ({min, max, count=10, startPosition=0}) => {
+			count = count > constants.search.MAXMAX ? constants.search.MAXMAX : count;
+			return database.findImagesByLex(min, max, startPosition, count);
+		},
+		tags: async ({tags=[], count=10, startPosition=0}) => {
+			if (tags.length < 1)
+				return {};
 
+
+		}
 	},
 	authenticate: async (message, data) => {
 

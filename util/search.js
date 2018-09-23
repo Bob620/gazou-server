@@ -1,4 +1,5 @@
 const database = require('./database');
+const uuidModify = require('./uuidmodify');
 
 class Search {
 	constructor() {
@@ -11,6 +12,14 @@ class Search {
 
 	hasExactHash(hash) {
 		return false;
+	}
+
+	byDateAdded(minTimestamp, maxTimestamp) {
+		return database.findImagesByLex(minTimestamp, maxTimestamp);
+	}
+
+	byDateModified(minTimestamp, maxTimestamp) {
+		return database.findImagesByScore(minTimestamp, maxTimestamp);
 	}
 }
 
