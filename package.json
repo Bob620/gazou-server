@@ -1,0 +1,26 @@
+{
+  "name": "gazou-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sockets.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bob620/gazou-server.git"
+  },
+  "author": "Bob620",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Bob620/gazou-server/issues"
+  },
+  "homepage": "https://github.com/Bob620/gazou-server#readme",
+  "dependencies": {
+    "redis": "^2.8.0",
+    "uuid": "^3.3.2"
+  }
+}
