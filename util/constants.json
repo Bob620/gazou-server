@@ -2,12 +2,13 @@
   "redis": {
     "DOMAIN": "gazou",
     "IMAGES": "images",
+    "ARTISTS": "artists",
     "images": {
       "METADATA": "metadata"
     },
     "SEARCH": "search",
     "search": {
-
+      "ARTISTIMAGES": "artistimages"
     }
   },
   "search": {

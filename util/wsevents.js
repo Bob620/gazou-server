@@ -41,14 +41,37 @@ function forceMetadataCompliance(metadata) {
 }
 
 module.exports = {
-	update: async ({uuid, metadata: newMetadata}) => {
-		// Force metadata compliance if possible
-		await database.updateImageMetadata(uuid, forceMetadataCompliance(newMetadata));
-		newMetadata.dateModified = Date.now();
+	update: async ({uuid, metadata: {artist="", addTags=[], removeTags=[]}}) => {
+		artist = artist.toLowerCase();
 
-		return {
-			[uuid]: await database.getImageMetadata(uuid)
+		const oldMetadata = await database.getImageMetadata(uuid);
+		const newMetadata = {
+			addTags: [],
+			removeTags: []
 		};
+
+		if (artist && oldMetadata.artist !== artist)
+			newMetadata.artist = artist;
+
+		for (const tag of addTags)
+			if (!oldMetadata.includes(tag))
+				newMetadata.addTags.push(tag);
+
+		for (const tag of removeTags)
+			if (oldMetadata.includes(tag))
+				newMetadata.removeTags.push(tag);
+
+		if (newMetadata.artist || newMetadata.addTags.length > 0 || newMetadata.removeTags.length > 0) {
+			newMetadata.dateModified = Date.now();
+
+			await database.updateImageMetadata(uuid, newMetadata);
+
+			return {
+				[uuid]: await database.getImageMetadata(uuid)
+			};
+		}
+
+		return {};
 	},
 	remove: {
 		single: async ({uuid}) => {
@@ -62,12 +85,13 @@ module.exports = {
 			return {total: removed};
 		}
 	},
-	upload: async ({hash}, data) => {
+	upload: async ({hash, artist=""}, data) => {
 		if (hash && typeof hash === 'string')
 			if (!search.hasExactHash(hash)) {
 				const dateAdded = Date.now();
 				const metadata = {
 					uuid: uuidv1(),
+					artist: artist ? artist.toLowerCase() : 'no artist',
 					hash,
 					dateModified: dateAdded,
 					dateAdded,
@@ -94,11 +118,20 @@ module.exports = {
 	search: {
 		dateModified: async ({min, max, count=10, startPosition=0}) => {
 			count = count > constants.search.MAXMAX ? constants.search.MAXMAX : count;
-			return database.findImagesByScore(min, max, startPosition, count);
+			return await database.findImagesByScore(min, max, startPosition, count);
 		},
 		dateAdded: async ({min, max, count=10, startPosition=0}) => {
 			count = count > constants.search.MAXMAX ? constants.search.MAXMAX : count;
-			return database.findImagesByLex(min, max, startPosition, count);
+			return await database.findImagesByLex(min, max, startPosition, count);
+		},
+		artistId: async ({id, count=10, startPosition=0}) => {
+			return await database.findImagesByArtistId(id, startPosition, count);
+		},
+		artistName: async ({name, count=10, startPosition=0}) => {
+			const artistId = database.getArtistByName(name);
+			if (artistId)
+				return await database.findImagesByArtistId(artistId, startPosition, count);
+			return {};
 		},
 		tags: async ({tags=[], count=10, startPosition=0}) => {
 			if (tags.length < 1)

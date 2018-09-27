@@ -8,6 +8,7 @@ const database = {
 		return redis.h.getAll(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`);
 	},
 	updateImageMetadata: async (uuid, metadata) => {
+		// UPDATE
 		if (metadata.dateModified)
 			redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, metadata.dateModified, uuidModify.toLexical(uuid));
 
@@ -34,6 +35,16 @@ const database = {
 	},
 	findImagesByScore: (minTimestamp, maxTimestamp, start=0, count=10) => {
 		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, minTimestamp, maxTimestamp, 'LIMIT', start, count);
+	},
+	findImagesByArtistId: (artistId, start=0, count=10) => {
+		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}`, artistId, artistId, 'LIMIT', start, count);
+	},
+	getArtistByName: (artistName) => {
+		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
+	},
+	createArtist: async (artistName) => {
+		const artistId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`);
+		return await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistId, artistName);
 	}
 };
 

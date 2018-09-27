@@ -55,11 +55,12 @@ class wssEmulator extends EmitterEmulator {
 		this.emitRaw('connection', this.data.ws);
 	}
 
-	sendAddNewImage(hash, callback) {
+	sendAddNewImage(hash, artist, callback) {
 		this.data.ws.emit('message', {
 			event: 'upload',
 			data: {
-				hash
+				hash,
+				artist
 			},
 			callback: `sendAddNewImage${callback ? `.${callback}` : ''}`
 		});
@@ -147,6 +148,30 @@ class wssEmulator extends EmitterEmulator {
 				startPos
 			},
 			callback: `sendSearchDateAdded.${callback ? `.${callback}` : ''}`
+		});
+	}
+
+	sendSearchArtistId(id, count=10, startPos=0, callback) {
+		this.data.ws.emit('message', {
+			event: 'search.artistId',
+			data: {
+				id,
+				count,
+				startPos
+			},
+			callback: `sendSearchArtistId.${callback ? `.${callback}` : ''}`
+		});
+	}
+
+	sendSearchArtistName(name, count=10, startPos=0, callback) {
+		this.data.ws.emit('message', {
+			event: 'search.artistName',
+			data: {
+				name,
+				count,
+				startPos
+			},
+			callback: `sendSearchArtistName.${callback ? `.${callback}` : ''}`
 		});
 	}
 }
@@ -245,18 +270,18 @@ wss.data.ws.on('send', message => {
 			break;
 		case 'update':
 			if (message.callback.endsWith('test6')) {
-				console.log(`\nTest 6: ws.update\nExpected: 'bob620'\nGot: '${message.data[testUuid].uploader}'`);
+				console.log(`\nTest 6: ws.update\nExpected: 'bob620'\nGot: '${message.data[testUuid].artist}'`);
 				completedTests++;
-				if (message.data[testUuid].uploader === 'bob620') {
+				if (message.data[testUuid].artist === 'bob620') {
 					passedTests++;
 					console.log('PASS');
 				} else
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test7')) {
-				console.log(`\nTest 7: ws.update\nExpected: '0'\nGot: '${message.data[testUuid].uploader}'`);
+				console.log(`\nTest 7: ws.update\nExpected: 'test'\nGot: '${message.data[testUuid].artist}'`);
 				completedTests++;
-				if (message.data[testUuid].uploader === '0') {
+				if (message.data[testUuid].artist === 'test') {
 					passedTests++;
 					console.log('PASS');
 				} else
@@ -337,9 +362,9 @@ wss.data.ws.on('send', message => {
 	}
 });
 
-wss.sendAddNewImage('somehash', 'test0');
-wss.sendAddNewImage('somenewhash', 'testUuidList');
-wss.sendAddNewImage('someotherhash', 'testUuidList');
+wss.sendAddNewImage('somehash', 'artistOne', 'test0');
+wss.sendAddNewImage('somenewhash', 'artistTwo', 'testUuidList');
+wss.sendAddNewImage('someotherhash', 'artistThree', 'testUuidList');
 setTimeout(() => {
 	wss.sendCustomEvent('Kappa', {}, 'test1');
 	wss.sendGetSingleMetadata(testUuid, 'test2');
@@ -347,7 +372,7 @@ setTimeout(() => {
 	wss.sendGetBatchMetadata(testUuidList, 'test4');
 	wss.sendGetBatchMetadata(['0'], 'test5');
 	wss.sendUpdateMetadata(testUuid, {
-		uploader: 'bob620'
+		artist: 'bob620'
 	}, 'test6');
 
 	wss.sendSearchDateModified(0, Date.now(), 10, 0, 'test12');
@@ -357,7 +382,7 @@ setTimeout(() => {
 
 	setTimeout(() => {
 		wss.sendUpdateMetadata(testUuid, {
-			uploader: ''
+			artist: 'test'
 		}, 'test7');
 
 		setTimeout(() => {
