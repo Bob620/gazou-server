@@ -1,5 +1,8 @@
 {
   "redisSettings": {},
   "imageUrl": "http://i.bobco.moe",
-  "uploadUrl": "https://gazou.bobco.moe"
+  "uploadUrl": "https://gazou.bobco.moe",
+  "authentication": {
+    "discordToken": ""
+  }
 }

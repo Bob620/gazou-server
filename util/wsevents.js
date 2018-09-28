@@ -41,7 +41,7 @@ function forceMetadataCompliance(metadata) {
 }
 
 module.exports = {
-	update: async ({uuid, metadata: {artist="", addTags=[], removeTags=[]}}) => {
+	update: async ({uuid, metadata: {artist='', addTags=[], removeTags=[]}}) => {
 		artist = artist.toLowerCase();
 
 		const oldMetadata = await database.getImageMetadata(uuid);
@@ -85,7 +85,7 @@ module.exports = {
 			return {total: removed};
 		}
 	},
-	upload: async ({hash, artist=""}, data) => {
+	upload: async ({hash, artist=''}, data) => {
 		if (hash && typeof hash === 'string')
 			if (!search.hasExactHash(hash)) {
 				const dateAdded = Date.now();
@@ -136,8 +136,7 @@ module.exports = {
 		tags: async ({tags=[], count=10, startPosition=0}) => {
 			if (tags.length < 1)
 				return {};
-
-
+			return {};
 		}
 	},
 	authenticate: async (message, data) => {

@@ -3,12 +3,14 @@
     "DOMAIN": "gazou",
     "IMAGES": "images",
     "ARTISTS": "artists",
+    "TAGS": "tags",
     "images": {
       "METADATA": "metadata"
     },
     "SEARCH": "search",
     "search": {
-      "ARTISTIMAGES": "artistimages"
+      "ARTISTIMAGES": "artists",
+      "TAGIMAGES": "tags"
     }
   },
   "search": {

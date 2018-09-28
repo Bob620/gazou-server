@@ -32,7 +32,8 @@ module.exports = {
 		rangeByLex: promisify(client.zrangebylex).bind(client),
 		rangeByScore: promisify(client.zrangebyscore).bind(client),
 		rem: promisify(client.zrem).bind(client),
-		scan: promisify(client.zscan).bind(client)
+		scan: promisify(client.zscan).bind(client),
+		interstore: promisify(client.zinterstore).bind(client)
 	},
 	h: {
 		del: promisify(client.hdel).bind(client),
