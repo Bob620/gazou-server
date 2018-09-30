@@ -50,12 +50,20 @@ module.exports = {
 			removeTags: []
 		};
 
-		if (artist && oldMetadata.artist !== artist)
+		if (artist && oldMetadata.artist !== artist) {
 			newMetadata.artist = artist;
 
+			if (!await database.getArtistByName(artist))
+				await database.createArtist(artist);
+		}
+
 		for (const tag of addTags)
-			if (!oldMetadata.includes(tag))
+			if (!oldMetadata.includes(tag)) {
 				newMetadata.addTags.push(tag);
+
+				if (!await database.getTagByName(tag))
+					await database.createTag(tag);
+			}
 
 		for (const tag of removeTags)
 			if (oldMetadata.includes(tag))
@@ -85,20 +93,29 @@ module.exports = {
 			return {total: removed};
 		}
 	},
-	upload: async ({hash, artist=''}, data) => {
+	upload: async ({hash, artist='', tags=[]}, data) => {
 		if (hash && typeof hash === 'string')
 			if (!search.hasExactHash(hash)) {
+				artist = artist.toLowerCase();
+
 				const dateAdded = Date.now();
 				const metadata = {
 					uuid: uuidv1(),
-					artist: artist ? artist.toLowerCase() : 'no artist',
+					artist: artist ? artist : 'no artist',
 					hash,
 					dateModified: dateAdded,
 					dateAdded,
-					uploader: data.user.uuid
+					uploader: data.user.username
 				};
 
-				await database.addImageMetadata(metadata.uuid, metadata);
+				if (!await database.getArtistByName(artist))
+					await database.createArtist(artist);
+
+				for (const tag of tags)
+					if (!await database.getTagByName(tag))
+						await database.createTag(tag);
+
+				await database.addImageMetadata(metadata.uuid, metadata, tags);
 
 				return {
 					uuid: metadata.uuid,
@@ -124,19 +141,33 @@ module.exports = {
 			count = count > constants.search.MAXMAX ? constants.search.MAXMAX : count;
 			return await database.findImagesByLex(min, max, startPosition, count);
 		},
-		artistId: async ({id, count=10, startPosition=0}) => {
-			return await database.findImagesByArtistId(id, startPosition, count);
-		},
-		artistName: async ({name, count=10, startPosition=0}) => {
-			const artistId = database.getArtistByName(name);
+		artist: async ({name, count=10, startPosition=0}) => {
+			const artistId = await database.getArtistByName(name);
 			if (artistId)
 				return await database.findImagesByArtistId(artistId, startPosition, count);
 			return {};
 		},
 		tags: async ({tags=[], count=10, startPosition=0}) => {
-			if (tags.length < 1)
-				return {};
-			return {};
+			switch(tags.length) {
+				case 0:
+					return {};
+				case 1:
+					const tagId = await database.getTagByName(tags[0]);
+					return await database.findImagesByTag(tagId, startPosition, count);
+				default:
+					const tagIds = [];
+					for (const tagName of tags) {
+						const tagId = await database.getTagByName(tagName);
+						if (tagId)
+							tagIds.push(tagId);
+						else
+							throw {
+								event: 'tags',
+								message: `Unknown tag '${tagName}'`
+							}
+					}
+					return await database.findImagesByTags(tagIds, startPosition, count);
+			}
 		}
 	},
 	authenticate: async (message, data) => {

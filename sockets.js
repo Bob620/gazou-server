@@ -9,7 +9,7 @@ class Sockets {
 		wss.on('connection', ws => {
 			let data = {
 				user: {
-					uuid: 'bb620'
+					username: 'bb620'
 				}
 			};
 

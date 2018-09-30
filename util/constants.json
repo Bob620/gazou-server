@@ -5,7 +5,8 @@
     "ARTISTS": "artists",
     "TAGS": "tags",
     "images": {
-      "METADATA": "metadata"
+      "METADATA": "metadata",
+      "TAGS": "tags"
     },
     "SEARCH": "search",
     "search": {

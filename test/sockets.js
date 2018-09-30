@@ -151,21 +151,9 @@ class wssEmulator extends EmitterEmulator {
 		});
 	}
 
-	sendSearchArtistId(id, count=10, startPos=0, callback) {
+	sendSearchArtist(name, count=10, startPos=0, callback) {
 		this.data.ws.emit('message', {
-			event: 'search.artistId',
-			data: {
-				id,
-				count,
-				startPos
-			},
-			callback: `sendSearchArtistId.${callback ? `.${callback}` : ''}`
-		});
-	}
-
-	sendSearchArtistName(name, count=10, startPos=0, callback) {
-		this.data.ws.emit('message', {
-			event: 'search.artistName',
+			event: 'search.artist',
 			data: {
 				name,
 				count,
