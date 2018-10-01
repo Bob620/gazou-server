@@ -10,7 +10,6 @@ const database = {
 		return metadata;
 	},
 	updateImageMetadata: async (uuid, {artist=false, dateModified=Date.now(), addTags=[], removeTags=[]}) => {
-
 		// Update date modified in search index
 		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, dateModified, uuidModify.toLexical(uuid));
 
@@ -34,7 +33,7 @@ const database = {
 				...removeTags
 			);
 	},
-	addImageMetadata: async (uuid, {hash, uploader, dateAdded=Date.now(), artist='no artist', dateModified=Date.now()}, tags) => {
+	addImageMetadata: async (uuid, {hash, uploader, dateAdded=Date.now(), artist, dateModified=Date.now()}, tags) => {
 		// Add metadata
 		await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
 			'dateModified', dateModified,
@@ -54,10 +53,12 @@ const database = {
 		// set date modified in search index with the uuid
 		return await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, dateModified, uuidModify.toLexical(uuid));
 	},
-	removeImageMetadata: uuid => {
+	removeImageMetadata: async uuid => {
+		const tags = await database.getImageMetadata(uuid).tags;
 		return Promise.all([
 			redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, uuidModify.toLexical(uuid)),
-			redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'uuid', 'hash', 'dateAdded', 'dateModified', 'uploader', 'artist')
+			redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'uuid', 'hash', 'dateAdded', 'dateModified', 'uploader', 'artist'),
+			redis.s.rem(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`, uuidModify.toLexical(uuid), ...tags)
 		]);
 	},
 	findImagesByLex: (minTimestamp, maxTimestamp, start=0, count=10) => {
@@ -76,6 +77,12 @@ const database = {
 		await redis.z.interstore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${intersectionStore}`, tagIds.length, ...tagIds);
 		return await redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${intersectionStore}`, start, start+count);
 	},
+	addImageToTag: (uuid, tag) => {
+		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}`, tag, uuid);
+	},
+	removeImageFromTag: (uuid, tag) => {
+		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}`, tag, uuid);
+	},
 	getArtistByName: artistName => {
 		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
 	},
@@ -91,6 +98,15 @@ const database = {
 		const tagId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`);
 		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagId, tagName);
 		return tagId;
+	},
+	addHash: hash => {
+		return redis.s.add(`${constants.redis.DOMAIN}:${constants.redis.HASHES}`, hash);
+	},
+	removeHash: hash => {
+		return redis.s.rem(`${constants.redis.DOMAIN}:${constants.redis.HASHES}`, hash);
+	},
+	hasHash: hash => {
+		return redis.s.isMember(`${constants.redis.DOMAIN}:${constants.redis.HASHES}`, hash);
 	}
 };
 

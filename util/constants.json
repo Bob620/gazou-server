@@ -4,6 +4,7 @@
     "IMAGES": "images",
     "ARTISTS": "artists",
     "TAGS": "tags",
+    "HASHES": "hashes",
     "images": {
       "METADATA": "metadata",
       "TAGS": "tags"

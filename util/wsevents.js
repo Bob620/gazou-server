@@ -95,7 +95,7 @@ module.exports = {
 	},
 	upload: async ({hash, artist='', tags=[]}, data) => {
 		if (hash && typeof hash === 'string')
-			if (!search.hasExactHash(hash)) {
+			if (!database.hasHash(hash)) {
 				artist = artist.toLowerCase();
 
 				const dateAdded = Date.now();
@@ -115,6 +115,7 @@ module.exports = {
 					if (!await database.getTagByName(tag))
 						await database.createTag(tag);
 
+				// Add image to database
 				await database.addImageMetadata(metadata.uuid, metadata, tags);
 
 				return {
