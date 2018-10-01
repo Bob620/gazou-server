@@ -9,10 +9,9 @@ const database = {
 		metadata.tags = await redis.s.members(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`);
 		return metadata;
 	},
-	updateImageMetadata: async (uuid, {artist=false, dateModified=false, addTags=[], removeTags=[]}) => {
+	updateImageMetadata: async (uuid, {artist=false, dateModified=Date.now(), addTags=[], removeTags=[]}) => {
 
-		// CHANGE TO SEARCH FUNCTIONS
-		// UPDATE date modified in search index
+		// Update date modified in search index
 		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, dateModified, uuidModify.toLexical(uuid));
 
 		// Update date modified in metadata
@@ -35,20 +34,25 @@ const database = {
 				...removeTags
 			);
 	},
-	addImageMetadata: async (uuid, metadata, tags) => {
-		await redis.hm.set(
-			`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
-			...Object.keys(metadata).reduce((acc, key) => acc.concat([key, metadata[key]]), [])
+	addImageMetadata: async (uuid, {hash, uploader, dateAdded=Date.now(), artist='no artist', dateModified=Date.now()}, tags) => {
+		// Add metadata
+		await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
+			'dateModified', dateModified,
+			'artist', artist,
+			'hash', hash,
+			'dateAdded', dateAdded,
+			'uploader', uploader,
+			'uuid', uuid
 		);
 
+		// Add the tags
 		await redis.s.add(
 			`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`,
 			...tags
 		);
 
-		// CHANGE TO SEARCH FUNCTIONS
-		// set date modified in search index
-		return await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, metadata.dateModified, uuidModify.toLexical(uuid));
+		// set date modified in search index with the uuid
+		return await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, dateModified, uuidModify.toLexical(uuid));
 	},
 	removeImageMetadata: uuid => {
 		return Promise.all([
