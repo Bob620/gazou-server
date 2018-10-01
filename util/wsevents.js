@@ -79,17 +79,22 @@ module.exports = {
 			};
 		}
 
+		await search.indexImage(uuid, newMetadata);
+
 		return {};
 	},
 	remove: {
 		single: async ({uuid}) => {
 			const [removed] = await database.removeImageMetadata(uuid);
+			await search.unindexImage(uuid);
 			return {total: removed};
 		},
 		batch: async ({uuids}) => {
 			let removed = 0;
-			for (const uuid of uuids)
+			for (const uuid of uuids) {
 				removed += (await database.removeImageMetadata(uuid))[0];
+				await search.unindexImage(uuid);
+			}
 			return {total: removed};
 		}
 	},
@@ -117,6 +122,9 @@ module.exports = {
 
 				// Add image to database
 				await database.addImageMetadata(metadata.uuid, metadata, tags);
+
+				metadata.tags = tags;
+				await search.indexImage(metadata.uuid, metadata);
 
 				return {
 					uuid: metadata.uuid,
