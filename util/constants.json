@@ -12,7 +12,8 @@
     "SEARCH": "search",
     "search": {
       "ARTISTIMAGES": "artists",
-      "TAGIMAGES": "tags"
+      "TAGIMAGES": "tags",
+      "TAGIMAGEINTERSECTIONS": "tagintersections"
     }
   },
   "search": {
