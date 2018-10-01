@@ -15,25 +15,71 @@ class Search {
 		}
 	}
 
-	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, hash}) {
-		if (uuid)
+	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, hash, dateModified}) {
+		if (uuid) {
 			if (tags)
 				for (const tag of tags) {
-					if (!await database.getTagByName(tag))
-						await database.createTag(tag);
-					await database.addImageToTag(uuid, tag);
+					let tagId = await database.getTagByName(tag);
+					if (!tagId)
+						tagId = await database.createTag(tag);
+					await database.addImageToTag(uuid, tagId, dateModified);
 				}
-			else if((addTags || removeTags)) {
+			else if ((addTags || removeTags)) {
 				for (const tag of addTags) {
-					if (!await database.getTagByName(tag))
-						await database.createTag(tag);
-					await database.addImageToTag(uuid, tag);
+					let tagId = await database.getTagByName(tag);
+					if (!tagId)
+						tagId = await database.createTag(tag);
+					await database.addImageToTag(uuid, tagId, dateModified);
 				}
 
-				for (const tag of removeTags)
-					if (await database.getTagByName(tag))
-						await database.removeImageFromTag(tag);
+				for (const tag of removeTags) {
+					let tagId = await database.getTagByName(tag);
+					if (tagId)
+						await database.removeImageFromTag(uuid, tagId);
+				}
 			}
+
+			if (artist) {
+				let artistId = await database.getArtistByName(artist);
+				if (!artistId)
+					artistId = await database.createArtist(artist);
+				await database.addImageToArtist(uuid, artistId, dateModified);
+			}
+
+//			if (uploader)
+//				if (!await database.getUploaderByName(uploader))
+//					await database.addImageToUploader(uploader, uuid);
+
+			if (hash)
+				if (!await database.hasHash(hash))
+					await database.addHash(hash);
+		}
+	}
+
+	async unindexImage(uuid) {
+		if (uuid) {
+			const {artist, hash, tags, uploader} = await database.getImageMetadata(uuid);
+
+			for (const tag of tags) {
+				const tagId = await database.getTagByName(tag);
+				if (tagId)
+					await database.removeImageFromTag(uuid, tagId);
+			}
+
+			if (artist) {
+				const artistId = await database.getArtistByName(artist);
+				if (artistId)
+					await database.removeImageFromArtist(uuid, artistId);
+			}
+
+//			if (uploader) {
+//				const uploaderId = await database.getUploaderByUsername(uploader);
+//				if (uploaderId)
+//					await database.removeImageFromUploader(uploader, uuid);
+//			}
+
+			await database.removeHash(hash);
+		}
 	}
 }
 
