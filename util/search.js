@@ -58,7 +58,10 @@ class Search {
 
 	async unindexImage(uuid) {
 		if (uuid) {
-			const {artist, hash, tags, uploader} = await database.getImageMetadata(uuid);
+			const metadata = await database.getImageMetadata(uuid);
+			if (!metadata)
+				return;
+			const {artist, hash, tags, uploader} = metadata;
 
 			for (const tag of tags) {
 				const tagId = await database.getTagByName(tag);

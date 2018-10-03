@@ -382,6 +382,7 @@ setTimeout(() => {
 	}, 1000);
 }, 1000);
 
+
 setTimeout(() => {
 	if (!testingFinished)
 		console.log(`\nPassed ${passedTests} out of ${totalTests} tests\n`);

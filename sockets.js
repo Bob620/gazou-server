@@ -41,6 +41,7 @@ class Sockets {
 							message: 'Unknown event type'
 						};
 				} catch(err) {
+					console.log(err);
 					responseMessage = {
 						event: 'error',
 						data: err,

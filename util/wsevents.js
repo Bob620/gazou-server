@@ -85,22 +85,22 @@ module.exports = {
 	},
 	remove: {
 		single: async ({uuid}) => {
-			const [removed] = await database.removeImageMetadata(uuid);
 			await search.unindexImage(uuid);
+			const [removed] = await database.removeImageMetadata(uuid);
 			return {total: removed};
 		},
 		batch: async ({uuids}) => {
 			let removed = 0;
 			for (const uuid of uuids) {
-				removed += (await database.removeImageMetadata(uuid))[0];
 				await search.unindexImage(uuid);
+				removed += (await database.removeImageMetadata(uuid))[0];
 			}
 			return {total: removed};
 		}
 	},
 	upload: async ({hash, artist='', tags=[]}, data) => {
 		if (hash && typeof hash === 'string')
-			if (!database.hasHash(hash)) {
+			if (!await database.hasHash(hash)) {
 				artist = artist.toLowerCase();
 
 				const dateAdded = Date.now();
