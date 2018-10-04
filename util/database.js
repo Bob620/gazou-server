@@ -104,8 +104,9 @@ const database = {
 		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, uuidModify.toLexical(uuid));
 	},
 	createArtist: async artistName => {
-		const artistId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`);
-		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistId, artistName);
+		await redis.eval('redis.call(\'zcard\', KEYS[0], KEYS[1])', `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, );
+//		const artistId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`);
+//		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistId, artistName);
 		return artistId;
 	},
 	getTagByName: tagName => {

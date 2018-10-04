@@ -10,6 +10,7 @@ client.on('error', (err) => {
 });
 
 module.exports = {
+	eval: promisify(client.eval).bind(client),
 	set: promisify(client.set).bind(client),
 	get: promisify(client.get).bind(client),
 	del: promisify(client.del).bind(client),
