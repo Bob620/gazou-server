@@ -15,7 +15,7 @@ class Search {
 		}
 	}
 
-	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, hash, dateModified}) {
+	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, hash, dateModified}, oldMetadata) {
 		if (uuid) {
 			if (tags)
 				for (const tag of tags) {
@@ -39,14 +39,29 @@ class Search {
 				}
 			}
 
-			if (artist) {
-				let artistId = await database.getArtistByName(artist);
-				if (!artistId)
-					artistId = await database.createArtist(artist);
-				await database.addImageToArtist(uuid, artistId, dateModified);
+			if (oldMetadata) {
+				if (artist !== oldMetadata.artist) {
+					let oldArtistId = await database.getArtistByName(artist);
+					if (oldArtistId)
+						await database.removeImageFromArtist(uuid, oldArtistId);
+
+					let artistId = await database.getArtistByName(artist);
+					if (!artistId)
+						artistId = await database.createArtist(artist);
+					await database.addImageToArtist(uuid, artistId, dateModified);
+				}
+			} else {
+				if (artist) {
+					let artistId = await database.getArtistByName(artist);
+					console.log(`${artist} == ${artistId}`);
+					if (!artistId) {
+						artistId = await database.createArtist(artist);
+					}
+					await database.addImageToArtist(uuid, artistId, dateModified);
+				}
 			}
 
-//			if (uploader)
+//			if (uploader !== oldUploader)
 //				if (!await database.getUploaderByName(uploader))
 //					await database.addImageToUploader(uploader, uuid);
 

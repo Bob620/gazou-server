@@ -41,8 +41,9 @@ function forceMetadataCompliance(metadata) {
 }
 
 module.exports = {
-	update: async ({uuid, metadata: {artist='', addTags=[], removeTags=[]}}) => {
+	update: async ({uuid, metadata: {uploader='', artist='', addTags=[], removeTags=[]}}) => {
 		artist = artist.toLowerCase();
+		uploader = uploader.toLowerCase();
 
 		const oldMetadata = await database.getImageMetadata(uuid);
 		const newMetadata = {
@@ -53,23 +54,30 @@ module.exports = {
 		if (artist && oldMetadata.artist !== artist) {
 			newMetadata.artist = artist;
 
-			if (!await database.getArtistByName(artist))
-				await database.createArtist(artist);
+//			if (!await database.getArtistByName(artist))
+//				await database.createArtist(artist);
+		}
+
+		if (uploader && oldMetadata.uploader !== artist) {
+//			newMetadata.artist = artist;
+
+//			if (!await database.getUploader(artist))
+//				await database.createArtist(artist);
 		}
 
 		for (const tag of addTags)
 			if (!oldMetadata.includes(tag)) {
 				newMetadata.addTags.push(tag);
 
-				if (!await database.getTagByName(tag))
-					await database.createTag(tag);
+//				if (!await database.getTagByName(tag))
+//					await database.createTag(tag);
 			}
 
 		for (const tag of removeTags)
 			if (oldMetadata.includes(tag))
 				newMetadata.removeTags.push(tag);
 
-		if (newMetadata.artist || newMetadata.addTags.length > 0 || newMetadata.removeTags.length > 0) {
+		if (newMetadata.artist || newMetadata.addTags.length > 0 || newMetadata.removeTags.length > 0 || newMetadata.uploader) {
 			newMetadata.dateModified = Date.now();
 
 			await database.updateImageMetadata(uuid, newMetadata);
@@ -79,7 +87,7 @@ module.exports = {
 			};
 		}
 
-		await search.indexImage(uuid, newMetadata);
+		await search.indexImage(uuid, newMetadata, oldMetadata);
 
 		return {};
 	},
@@ -113,12 +121,12 @@ module.exports = {
 					uploader: data.user.username
 				};
 
-				if (!await database.getArtistByName(artist))
-					await database.createArtist(artist);
+//				if (!await database.getArtistByName(artist))
+//					await database.createArtist(artist);
 
-				for (const tag of tags)
-					if (!await database.getTagByName(tag))
-						await database.createTag(tag);
+//				for (const tag of tags)
+//					if (!await database.getTagByName(tag))
+//						await database.createTag(tag);
 
 				// Add image to database
 				await database.addImageMetadata(metadata.uuid, metadata, tags);

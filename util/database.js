@@ -95,13 +95,13 @@ const database = {
 		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`, uuidModify.toLexical(uuid));
 	},
 	getArtistByName: artistName => {
-		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
+		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
 	},
 	addImageToArtist: (uuid, artistId, dateModified=Date.now()) => {
 		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, dateModified, uuidModify.toLexical(uuid));
 	},
 	removeImageFromArtist: (uuid, artistId) => {
-		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${artistId}`, uuidModify.toLexical(uuid));
+		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, uuidModify.toLexical(uuid));
 	},
 	createArtist: async artistName => {
 		const artistId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`);
@@ -109,7 +109,7 @@ const database = {
 		return artistId;
 	},
 	getTagByName: tagName => {
-		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagName);
+		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagName);
 	},
 	createTag: async tagName => {
 		const tagId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`);
