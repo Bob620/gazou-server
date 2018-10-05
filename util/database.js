@@ -104,18 +104,13 @@ const database = {
 		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, uuidModify.toLexical(uuid));
 	},
 	createArtist: async artistName => {
-		await redis.eval('redis.call(\'zcard\', KEYS[0], KEYS[1])', `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, );
-//		const artistId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`);
-//		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistId, artistName);
-		return artistId;
+		return await redis.eval("local artistId = redis.call('zcard', KEYS[1]) redis.call('zadd', KEYS[2], artistId, KEYS[3]) return artistId", 3, `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
 	},
 	getTagByName: tagName => {
 		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagName);
 	},
 	createTag: async tagName => {
-		const tagId = 1 + await redis.z.card(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`);
-		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagId, tagName);
-		return tagId;
+		return await redis.eval("local tagId = redis.call('zcard', KEYS[1]) redis.call('zadd', KEYS[2], tagId, KEYS[3]) return tagId", 3, `${constants.redis.DOMAIN}:${constants.redis.TAGS}`, `${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagName);
 	},
 	addHash: hash => {
 		return redis.s.add(`${constants.redis.DOMAIN}:${constants.redis.HASHES}`, hash);

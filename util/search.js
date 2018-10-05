@@ -53,7 +53,6 @@ class Search {
 			} else {
 				if (artist) {
 					let artistId = await database.getArtistByName(artist);
-					console.log(`${artist} == ${artistId}`);
 					if (!artistId) {
 						artistId = await database.createArtist(artist);
 					}
@@ -86,6 +85,7 @@ class Search {
 
 			if (artist) {
 				const artistId = await database.getArtistByName(artist);
+
 				if (artistId)
 					await database.removeImageFromArtist(uuid, artistId);
 			}

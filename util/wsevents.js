@@ -81,13 +81,12 @@ module.exports = {
 			newMetadata.dateModified = Date.now();
 
 			await database.updateImageMetadata(uuid, newMetadata);
+			await search.indexImage(uuid, newMetadata, oldMetadata);
 
 			return {
 				[uuid]: await database.getImageMetadata(uuid)
 			};
 		}
-
-		await search.indexImage(uuid, newMetadata, oldMetadata);
 
 		return {};
 	},

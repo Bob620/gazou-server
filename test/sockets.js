@@ -373,12 +373,12 @@ setTimeout(() => {
 			artist: 'test'
 		}, 'test7');
 
-//		setTimeout(() => {
-//			wss.sendRemoveSingleImage(testUuid, 'test8');
-//			wss.sendRemoveSingleImage('invalidUuid', 'test9');
-//			wss.sendRemoveBatchImage(testUuidList, 'test10');
-//			wss.sendRemoveBatchImage(['invalidUuid1', 'invalidUuid2'], 'test11');
-//		}, 1000);
+		setTimeout(() => {
+			wss.sendRemoveSingleImage(testUuid, 'test8');
+			wss.sendRemoveSingleImage('invalidUuid', 'test9');
+			wss.sendRemoveBatchImage(testUuidList, 'test10');
+			wss.sendRemoveBatchImage(['invalidUuid1', 'invalidUuid2'], 'test11');
+		}, 1000);
 	}, 1000);
 }, 1000);
 
