@@ -15,7 +15,7 @@ class Search {
 		}
 	}
 
-	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, hash, dateModified}, oldMetadata) {
+	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, dateModified}, oldMetadata) {
 		if (uuid) {
 			if (tags)
 				for (const tag of tags) {
@@ -41,7 +41,7 @@ class Search {
 
 			if (oldMetadata) {
 				if (artist !== oldMetadata.artist) {
-					let oldArtistId = await database.getArtistByName(artist);
+					let oldArtistId = await database.getArtistByName(oldMetadata.artist);
 					if (oldArtistId)
 						await database.removeImageFromArtist(uuid, oldArtistId);
 
@@ -63,10 +63,6 @@ class Search {
 //			if (uploader !== oldUploader)
 //				if (!await database.getUploaderByName(uploader))
 //					await database.addImageToUploader(uploader, uuid);
-
-			if (hash)
-				if (!await database.hasHash(hash))
-					await database.addHash(hash);
 		}
 	}
 
@@ -75,7 +71,7 @@ class Search {
 			const metadata = await database.getImageMetadata(uuid);
 			if (!metadata)
 				return;
-			const {artist, hash, tags, uploader} = metadata;
+			const {artist, tags, uploader} = metadata;
 
 			for (const tag of tags) {
 				const tagId = await database.getTagByName(tag);
@@ -95,8 +91,6 @@ class Search {
 //				if (uploaderId)
 //					await database.removeImageFromUploader(uploader, uuid);
 //			}
-
-			await database.removeHash(hash);
 		}
 	}
 }

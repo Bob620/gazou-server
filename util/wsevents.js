@@ -42,6 +42,14 @@ function forceMetadataCompliance(metadata) {
 
 module.exports = {
 	update: async ({uuid, metadata: {uploader='', artist='', addTags=[], removeTags=[]}}) => {
+		// Need to check if the image is locked, if it is then we can throw an error safely
+		if (!await database.checkAndLockImage(uuid))
+			throw {
+				event: 'update',
+				message: 'Image is currently locked (may be being updated or deleted)'
+			};
+		// Image is now locked and ready for us to work on it
+
 		artist = artist.toLowerCase();
 		uploader = uploader.toLowerCase();
 
@@ -80,29 +88,88 @@ module.exports = {
 		if (newMetadata.artist || newMetadata.addTags.length > 0 || newMetadata.removeTags.length > 0 || newMetadata.uploader) {
 			newMetadata.dateModified = Date.now();
 
+			// update the metadata
 			await database.updateImageMetadata(uuid, newMetadata);
+			// Index the new metadata
 			await search.indexImage(uuid, newMetadata, oldMetadata);
+
+			// Unlock the image since we have updated the image
+			await database.unlockImage(uuid);
 
 			return {
 				[uuid]: await database.getImageMetadata(uuid)
 			};
 		}
 
+		// Unlock the unchanged image
+		await database.unlockImage(uuid);
+
 		return {};
 	},
 	remove: {
 		single: async ({uuid}) => {
+			const metadata = await database.getImageMetadata(uuid);
+			// Image exists (need hash later anyway)
+			if (!metadata.hash)
+				throw {
+					event: 'remove.single',
+					message: 'Image does not exist'
+				};
+
+			// Need to check if the image is locked, if it is then we can throw an error safely
+			if (!await database.checkAndLockImage(uuid))
+				throw {
+					event: 'remove.single',
+					message: 'Image is currently locked (may be being updated or deleted)'
+				};
+			// Image is now locked and ready for us to work on it
+
 			await search.unindexImage(uuid);
 			const [removed] = await database.removeImageMetadata(uuid);
-			return {total: removed};
+			// Allow the image to be reuploaded
+			await database.removeHash(metadata.hash);
+
+			if (!removed) throw {
+				event: 'remove.single',
+				message: 'Unable to delete the image'
+			};
+
+			// Image lock is removed automatically when deleted, return safely
+			// return a confirmation of deletion
+			return [uuid];
 		},
 		batch: async ({uuids}) => {
-			let removed = 0;
-			for (const uuid of uuids) {
-				await search.unindexImage(uuid);
-				removed += (await database.removeImageMetadata(uuid))[0];
-			}
-			return {total: removed};
+			// Lock as many images as possible asap
+			let imageLocks = [];
+			let imageHashes = {};
+			for (const uuid of uuids)
+				imageLocks.push(new Promise(async resolve => {
+					const metadata = await database.getImageMetadata(uuid);
+					if (!metadata.hash)
+						resolve(false);
+					else {
+						imageHashes[uuid] = metadata.hash;
+						resolve(database.checkAndLockImage(uuid));
+					}
+				}));
+			const locks = await Promise.all(imageLocks);
+
+			// If locked remove the image, can't guarantee everything is locked
+			let removed = [];
+			for (let i = 0; i < Object.keys(uuids).length; i++)
+				if (locks[i]) {
+					const uuid = uuids[i];
+
+					await search.unindexImage(uuid);
+					if ((await database.removeImageMetadata(uuid))[0])
+						removed.push(uuid);
+					// Allow the image to be reuploaded
+					await database.removeHash(imageHashes[uuid]);
+				}
+
+			// Image lock is removed automatically when deleted, return safely
+			// return a confirmation of uuids deleted
+			return removed;
 		}
 	},
 	upload: async ({hash, artist='', tags=[]}, data) => {
@@ -127,10 +194,13 @@ module.exports = {
 //					if (!await database.getTagByName(tag))
 //						await database.createTag(tag);
 
-				// Add image to database
-				await database.addImageMetadata(metadata.uuid, metadata, tags);
+				// Add image to database, and wait for the image to be uploaded
+				// Assume the image isn't uploaded, add `true`
+				await database.addImageMetadata(metadata.uuid, metadata, tags, false);
+				await database.addHash(hash);
 
-				metadata.tags = tags;
+//				metadata.tags = tags;
+				// DISABLE THIS UNTIL IMAGE UPLOADED
 				await search.indexImage(metadata.uuid, metadata);
 
 				return {
@@ -197,7 +267,7 @@ module.exports = {
 					message: 'Undefined uuid'
 				};
 			const item = await database.getImageMetadata(uuid);
-			if (item)
+			if (item.hash)
 				return {
 					[uuid]: item
 				};
@@ -213,7 +283,7 @@ module.exports = {
 			let metadata = {};
 			for (const uuid of uuids) {
 				const item = await database.getImageMetadata(uuid);
-				if (item)
+				if (item.hash)
 					metadata[uuid] = item;
 			}
 			return metadata;

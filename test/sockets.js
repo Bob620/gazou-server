@@ -285,23 +285,22 @@ wss.data.ws.on('send', message => {
 					console.log('PASS');
 				} else
 					console.log('FAIL');
+			} else if (message.callback.endsWith('test9')) {
+				console.log(`\nTest 9: ws.remove.single\nExpected: 'Image does not exist'\nGot: '${message.data.message}'`);
+				completedTests++;
+				if (message.data.message === 'Image does not exist') {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
 			} else
 				console.log(message);
 			break;
 		case 'remove.single':
 			if (message.callback.endsWith('test8')) {
-				console.log(`\nTest 8: ws.remove.single\nExpected: '1'\nGot: '${message.data.total}'`);
+				console.log(`\nTest 8: ws.remove.single\nExpected: '1'\nGot: '${message.data.length}'`);
 				completedTests++;
-				if (message.data.total === 1) {
-					passedTests++;
-					console.log('PASS');
-				} else
-					console.log('FAIL');
-			}
-			if (message.callback.endsWith('test9')) {
-				console.log(`\nTest 9: ws.remove.single\nExpected: '0'\nGot: '${message.data.total}'`);
-				completedTests++;
-				if (message.data.total === 0) {
+				if (message.data.length === 1) {
 					passedTests++;
 					console.log('PASS');
 				} else
@@ -310,18 +309,18 @@ wss.data.ws.on('send', message => {
 			break;
 		case 'remove.batch':
 			if (message.callback.endsWith('test10')) {
-				console.log(`\nTest 10: ws.remove.batch\nExpected: '${testUuidList.length}'\nGot: '${message.data.total}'`);
+				console.log(`\nTest 10: ws.remove.batch\nExpected: '${testUuidList.length}'\nGot: '${message.data.length}'`);
 				completedTests++;
-				if (message.data.total === testUuidList.length) {
+				if (message.data.length === testUuidList.length) {
 					passedTests++;
 					console.log('PASS');
 				} else
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test11')) {
-				console.log(`\nTest 11: ws.remove.batch\nExpected: '0'\nGot: '${message.data.total}'`);
+				console.log(`\nTest 11: ws.remove.batch\nExpected: '0'\nGot: '${message.data.length}'`);
 				completedTests++;
-				if (message.data.total === 0) {
+				if (message.data.length === 0) {
 					passedTests++;
 					console.log('PASS');
 				} else

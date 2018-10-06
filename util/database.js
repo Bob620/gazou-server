@@ -7,9 +7,11 @@ const database = {
 	getImageMetadata: async uuid => {
 		let metadata = await redis.h.getAll(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`);
 		if (metadata) {
-			metadata.tags = await redis.s.members(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`);
+			const tags = await redis.s.members(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`);
+			metadata.tags = tags ? tags : [];
 			return metadata;
-		}
+		} else
+			return {};
 	},
 	updateImageMetadata: async (uuid, {artist=false, dateModified=Date.now(), addTags=[], removeTags=[]}) => {
 		// Update date modified in search index
@@ -35,16 +37,27 @@ const database = {
 				...removeTags
 			);
 	},
-	addImageMetadata: async (uuid, {hash, uploader, dateAdded=Date.now(), artist, dateModified=Date.now()}, tags) => {
+	addImageMetadata: async (uuid, {hash, uploader, dateAdded=Date.now(), artist, dateModified=Date.now()}, tags, notUploaded=true) => {
 		// Add metadata
-		await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
-			'dateModified', dateModified,
-			'artist', artist,
-			'hash', hash,
-			'dateAdded', dateAdded,
-			'uploader', uploader,
-			'uuid', uuid
-		);
+		if (!notUploaded)
+			await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
+				'dateModified', dateModified,
+				'artist', artist,
+				'hash', hash,
+				'dateAdded', dateAdded,
+				'uploader', uploader,
+				'uuid', uuid
+			);
+		else
+			await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
+				'dateModified', dateModified,
+				'artist', artist,
+				'hash', hash,
+				'dateAdded', dateAdded,
+				'uploader', uploader,
+				'uuid', uuid,
+				'notuploaded', notUploaded
+			);
 
 		// Add the tags
 		if (tags.length > 0)
@@ -57,17 +70,17 @@ const database = {
 		return await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, dateModified, uuidModify.toLexical(uuid));
 	},
 	removeImageMetadata: async uuid => {
-		const tags = await database.getImageMetadata(uuid).tags;
-		if (tags)
+		const metadata = await database.getImageMetadata(uuid);
+		if (metadata.tags.length > 0)
 			return Promise.all([
 				redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, uuidModify.toLexical(uuid)),
-				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'uuid', 'hash', 'dateAdded', 'dateModified', 'uploader', 'artist'),
-				redis.s.rem(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`, ...tags)
+				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, ...Object.keys(metadata)),
+				redis.s.rem(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.TAGS}`, ...metadata.tags)
 			]);
 		else
 			return Promise.all([
 				redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, uuidModify.toLexical(uuid)),
-				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'uuid', 'hash', 'dateAdded', 'dateModified', 'uploader', 'artist')
+				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, ...Object.keys(metadata))
 			]);
 	},
 	findImagesByLex: (minTimestamp, maxTimestamp, start=0, count=10) => {
@@ -120,6 +133,24 @@ const database = {
 	},
 	hasHash: hash => {
 		return redis.s.isMember(`${constants.redis.DOMAIN}:${constants.redis.HASHES}`, hash);
+	},
+	imageIsLocked: async uuid => {
+		return !!redis.h.get(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'locked');
+	},
+	lockImage: uuid => {
+		return redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'locked', true);
+	},
+	unlockImage: uuid => {
+		return redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'locked');
+	},
+	checkAndLockImage: uuid => {
+		return !!redis.eval("local isLocked = redis.call('hget', KEYS[1], 'locked') if not isLocked then redis.call('hmset', KEYS[1], 'locked', 1) end return isLocked", 1, `${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`);
+	},
+	imageIsUploaded: uuid => {
+		return !redis.h.get(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded');
+	},
+	setImageUploaded: uuid => {
+		return redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded');
 	}
 };
 
