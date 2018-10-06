@@ -239,19 +239,28 @@ module.exports = {
 					return {};
 				case 1:
 					const tagId = await database.getTagByName(tags[0]);
-					return await database.findImagesByTag(tagId, startPosition, count);
+					if (tagId)
+						return await database.findImagesByTag(tagId, startPosition, count);
+					else
+						throw {
+							event: 'tags',
+							message: `Unknown tag '${tags[0]}'`
+						};
 				default:
-					const tagIds = [];
-					for (const tagName of tags) {
-						const tagId = await database.getTagByName(tagName);
-						if (tagId)
-							tagIds.push(tagId);
-						else
-							throw {
-								event: 'tags',
-								message: `Unknown tag '${tagName}'`
-							}
-					}
+					let tagPromises = [];
+					for (const tagName of tags)
+						tagPromises.push(new Promise(async (resolve, reject) => {
+							const tagId = await database.getTagByName(tagName);
+							if (tagId)
+								resolve(tagId);
+							else
+								reject({
+									event: 'tags',
+									message: `Unknown tag '${tagName}'`
+								});
+						}));
+
+					const tagIds = await Promise.all(tagPromises);
 					return await database.findImagesByTags(tagIds, startPosition, count);
 			}
 		}
