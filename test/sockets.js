@@ -1,5 +1,5 @@
 const Sockets = require('../sockets');
-let totalTests = 16;
+let totalTests = 23;
 let passedTests = 0;
 let completedTests = 0;
 
@@ -293,6 +293,14 @@ wss.data.ws.on('send', message => {
 					console.log('PASS');
 				} else
 					console.log('FAIL');
+			} else if (message.callback.endsWith('test20')) {
+				console.log(`\nTest 20: ws.remove.single\nExpected: 'Unknown artist 'erteyhs''\nGot: '${message.data.message}'`);
+				completedTests++;
+				if (message.data.message === "Unknown artist 'erteyhs'") {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
 			} else
 				console.log(message);
 			break;
@@ -341,6 +349,62 @@ wss.data.ws.on('send', message => {
 					console.log('FAIL');
 			}
 			break;
+		case 'search.artist':
+			if (message.callback.endsWith('test16')) {
+				console.log(`\nTest 16: ws.search.artist\nExpected: '1'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 1) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test17')) {
+				console.log(`\nTest 17: ws.search.artist\nExpected: '0'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 0) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test18')) {
+				console.log(`\nTest 18: ws.search.artist\nExpected: '1'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 1) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test19')) {
+				console.log(`\nTest 19: ws.search.artist\nExpected: '1'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 1) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test21')) {
+				console.log(`\nTest 21: ws.search.artist\nExpected: '0'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 0) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test22')) {
+				console.log(`\nTest 22: ws.search.artist\nExpected: '0'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 0) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			break;
 	}
 
 	if (totalTests === completedTests) {
@@ -368,15 +432,24 @@ setTimeout(() => {
 	wss.sendSearchDateAdded(0, 100, 10, 0, 'test15');
 
 	setTimeout(() => {
+		wss.sendSearchArtist('bob620', 1, 0, 'test16');
+		wss.sendSearchArtist('artistOne', 1, 0, 'test17');
+		wss.sendSearchArtist('bob620', 10, 0, 'test18');
+		wss.sendSearchArtist('erteyhs', 10, 0, 'test20');
 		wss.sendUpdateMetadata(testUuid, {
 			artist: 'test'
 		}, 'test7');
 
 		setTimeout(() => {
+			wss.sendSearchArtist('test', 1, 0, 'test19');
+			wss.sendSearchArtist('bob620', 1, 0, 'test21');
 			wss.sendRemoveSingleImage(testUuid, 'test8');
 			wss.sendRemoveSingleImage('invalidUuid', 'test9');
 			wss.sendRemoveBatchImage(testUuidList, 'test10');
 			wss.sendRemoveBatchImage(['invalidUuid1', 'invalidUuid2'], 'test11');
+			setTimeout(() => {
+				wss.sendSearchArtist('test', 1, 0, 'test22');
+			}, 500);
 		}, 1000);
 	}, 1000);
 }, 1000);

@@ -6,40 +6,6 @@ const constants = require('./constants');
 const database = require('./database');
 const search = require('./search');
 
-function forceMetadataCompliance(metadata) {
-	let validMetadata = {};
-
-	for (const key of Object.keys(metadata)) {
-		switch(key) {
-			case 'uuid':
-				if (metadata.uuid && typeof metadata.uuid === 'string')
-					validMetadata.uuid = metadata[key];
-				break;
-			case 'hash':
-				if (metadata.hash && typeof metadata.hash === 'string')
-					validMetadata.hash = metadata[key];
-				break;
-			case 'dateAdded':
-				if (metadata.dateAdded && typeof metadata.dateAdded === 'number')
-					validMetadata.dateAdded = metadata[key];
-				break;
-			case 'dateModified':
-				if (metadata.dateModified && typeof metadata.dateModified === 'number')
-					validMetadata.dateModified = metadata[key];
-				break;
-			case 'uploader':
-				if (typeof metadata.uploader === 'string')
-					if (metadata.uploader === '')
-						validMetadata.uploader = '0';
-					else
-						validMetadata.uploader = metadata[key];
-				break;
-		}
-	}
-
-	return validMetadata;
-}
-
 module.exports = {
 	update: async ({uuid, metadata: {uploader='', artist='', addTags=[], removeTags=[]}}) => {
 		// Need to check if the image is locked, if it is then we can throw an error safely
@@ -228,10 +194,13 @@ module.exports = {
 			return await database.findImagesByLex(min, max, startPosition, count);
 		},
 		artist: async ({name, count=10, startPosition=0}) => {
-			const artistId = await database.getArtistByName(name);
+			const artistId = await database.getArtistByName(name.toLowerCase());
 			if (artistId)
 				return await database.findImagesByArtistId(artistId, startPosition, count);
-			return {};
+			throw {
+				event: 'tags',
+				message: `Unknown artist '${name.toLowerCase()}'`
+			};
 		},
 		tags: async ({tags=[], count=10, startPosition=0}) => {
 			switch(tags.length) {
