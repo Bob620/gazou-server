@@ -83,23 +83,48 @@ const database = {
 				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, ...Object.keys(metadata))
 			]);
 	},
-	findImagesByLex: (minTimestamp, maxTimestamp, start=0, count=10) => {
-		return redis.z.rangeByLex(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, '['+uuidModify.timestampToUlid(minTimestamp), '['+uuidModify.timestampToUlid(maxTimestamp), 'LIMIT', start, count);
+	findImagesByLex: async (minTimestamp, maxTimestamp, start=0, count=10) => {
+		const lexUuids = await redis.z.rangeByLex(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, '['+uuidModify.timestampToUlid(minTimestamp), '['+uuidModify.timestampToUlid(maxTimestamp), 'LIMIT', start, count);
+
+		let normUuid = [];
+		for (const lexUuid of lexUuids)
+			normUuid.push(uuidModify.toRegular(lexUuid));
+		return normUuid;
 	},
-	findImagesByScore: (minTimestamp, maxTimestamp, start=0, count=10) => {
-		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, minTimestamp, maxTimestamp, 'LIMIT', start, count);
+	findImagesByScore: async (minTimestamp, maxTimestamp, start=0, count=10) => {
+		const lexUuids = await redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, minTimestamp, maxTimestamp, 'LIMIT', start, count);
+
+		let normUuid = [];
+		for (const lexUuid of lexUuids)
+			normUuid.push(uuidModify.toRegular(lexUuid));
+		return normUuid;
 	},
-	findImagesByArtistId: (artistId, start=0, count=10) => {
-		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, '-inf', '+inf', 'LIMIT', start, count);
+	findImagesByArtistId: async (artistId, start=0, count=10) => {
+		const lexUuids = await redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, '-inf', '+inf', 'LIMIT', start, count);
+
+		let normUuid = [];
+		for (const lexUuid of lexUuids)
+			normUuid.push(uuidModify.toRegular(lexUuid));
+		return normUuid;
 	},
-	findImagesByTag: (tagId, start=0, count=10) => {
-		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`, '-inf', '+inf', 'LIMIT', start, count);
+	findImagesByTag: async (tagId, start=0, count=10) => {
+		const lexUuids = await redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`, '-inf', '+inf', 'LIMIT', start, count);
+
+		let normUuid = [];
+		for (const lexUuid of lexUuids)
+			normUuid.push(uuidModify.toRegular(lexUuid));
+		return normUuid;
 	},
 	findImagesByTags: async (intersectionStore, tagIds, start=0, count=10) => {
 		await redis.z.interstore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`, tagIds.length, ...tagIds.map((tagId) => {
 			return `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`;
 		}));
-		return await redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`, start, start+count);
+		const lexUuids = await await redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`, start, start+count);
+
+		let normUuid = [];
+		for (const lexUuid of lexUuids)
+			normUuid.push(uuidModify.toRegular(lexUuid));
+		return normUuid;
 	},
 	addImageToTag: (uuid, tagId, dateModified=Date.now()) => {
 		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`, dateModified, uuidModify.toLexical(uuid));
