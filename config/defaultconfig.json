@@ -4,5 +4,9 @@
   "uploadUrl": "https://gazou.bobco.moe",
   "authentication": {
     "discordToken": ""
+  },
+  "website": {
+    "keyLocation": "",
+    "certLocation": ""
   }
 }
