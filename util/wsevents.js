@@ -253,7 +253,7 @@ module.exports = {
 				return {};
 		},
 		batch: async ({uuids}) => {
-			if (uuids === undefined || uuids.length < 1)
+			if (uuids === undefined || uuids.length < 0)
 				throw {
 					event: 'get.batch',
 					message: 'Undefined uuids'
