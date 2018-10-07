@@ -1,5 +1,5 @@
 const Sockets = require('../sockets');
-let totalTests = 23;
+let totalTests = 25;
 let passedTests = 0;
 let completedTests = 0;
 
@@ -404,6 +404,24 @@ wss.data.ws.on('send', message => {
 				} else
 					console.log('FAIL');
 			}
+			if (message.callback.endsWith('test23')) {
+				console.log(`\nTest 23: ws.search.artist\nExpected: '2'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 2) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
+			if (message.callback.endsWith('test24')) {
+				console.log(`\nTest 24: ws.search.artist\nExpected: '1'\nGot: '${message.data.length}'`);
+				completedTests++;
+				if (message.data.length === 1) {
+					passedTests++;
+					console.log('PASS');
+				} else
+					console.log('FAIL');
+			}
 			break;
 	}
 
@@ -437,18 +455,20 @@ setTimeout(() => {
 		wss.sendSearchArtist('bob620', 10, 0, 'test18');
 		wss.sendSearchArtist('erteyhs', 10, 0, 'test20');
 		wss.sendUpdateMetadata(testUuid, {
-			artist: 'test'
+			artist: 'artistTwo'
 		}, 'test7');
 
 		setTimeout(() => {
-			wss.sendSearchArtist('test', 1, 0, 'test19');
+			wss.sendSearchArtist('artistTwo', 1, 0, 'test19');
+			wss.sendSearchArtist('artistTwo', 2, 0, 'test23');
+			wss.sendSearchArtist('artistTwo', 1, 1, 'test24');
 			wss.sendSearchArtist('bob620', 1, 0, 'test21');
 			wss.sendRemoveSingleImage(testUuid, 'test8');
 			wss.sendRemoveSingleImage('invalidUuid', 'test9');
 			wss.sendRemoveBatchImage(testUuidList, 'test10');
 			wss.sendRemoveBatchImage(['invalidUuid1', 'invalidUuid2'], 'test11');
 			setTimeout(() => {
-				wss.sendSearchArtist('test', 1, 0, 'test22');
+				wss.sendSearchArtist('artistTwo', 1, 0, 'test22');
 			}, 500);
 		}, 1000);
 	}, 1000);
