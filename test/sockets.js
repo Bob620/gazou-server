@@ -267,9 +267,9 @@ wss.data.ws.on('send', message => {
 					console.log('FAIL');
 			}
 			if (message.callback.endsWith('test7')) {
-				console.log(`\nTest 7: ws.update\nExpected: 'test'\nGot: '${message.data[testUuid].artist}'`);
+				console.log(`\nTest 7: ws.update\nExpected: 'artisttwo'\nGot: '${message.data[testUuid].artist}'`);
 				completedTests++;
-				if (message.data[testUuid].artist === 'test') {
+				if (message.data[testUuid].artist === 'artisttwo') {
 					passedTests++;
 					console.log('PASS');
 				} else
