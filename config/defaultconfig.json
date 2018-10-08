@@ -1,9 +1,11 @@
 {
   "redisSettings": {},
-  "imageUrl": "http://i.bobco.moe",
-  "uploadUrl": "https://gazou.bobco.moe",
-  "authentication": {
-    "discordToken": ""
+  "imageUrl": "",
+  "uploadUrl": "",
+  "discord": {
+    "discordToken": "",
+    "adminUsers": [""],
+    "commandPrefix": "!"
   },
   "website": {
     "keyLocation": "",
@@ -15,7 +17,6 @@
   },
   "aws": {
     "accessKeyId": "",
-    "secretAccessKey": "",
-    "region": ""
+    "secretAccessKey": ""
   }
 }

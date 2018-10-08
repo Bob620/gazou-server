@@ -173,6 +173,30 @@ const database = {
 	},
 	setImageNotUploaded: uuid => {
 		return redis.h.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded', true);
+	},
+	addUploader: (userId, displayName) => {
+		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, displayName);
+	},
+	revokeUploader: userId => {
+		return redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload', false);
+	},
+	approveUploader: userId => {
+		return redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload', true);
+	},
+	uploaderCanUpload: userId => {
+		return redis.h.get(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload');
+	},
+	updateUploader: (userId, displayName) => {
+		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, 'XX', userId, displayName);
+	},
+	getUserDisplayName: userId => {
+		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, userId);
+	},
+	getUserId: displayName => {
+		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, displayName);
+	},
+	getUploaders: () => {
+		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, '-inf', '+inf');
 	}
 };
 

@@ -3,6 +3,7 @@
     "DOMAIN": "gazou",
     "IMAGES": "images",
     "ARTISTS": "artists",
+    "UPLOADERS": "uploaders",
     "TAGS": "tags",
     "HASHES": "hashes",
     "images": {

@@ -1,16 +1,17 @@
 const WSEvents = require('./util/wsevents');
 
 class Sockets {
-	constructor(wss) {
+	constructor(wss, auth, random) {
 		this.data = {
-			wss
+			wss,
+			auth,
+			random
 		};
 
 		wss.on('connection', ws => {
-			let data = {
-				user: {
-					username: 'bb620'
-				}
+			let currentUser = {
+				authed: false,
+				id: ''
 			};
 
 			ws.on('message', async message => {
@@ -34,19 +35,23 @@ class Sockets {
 							};
 
 					if (typeof event === 'function')
-						responseMessage.data = await event(message.data, data);
+						responseMessage.data = await event(message.data, this.data, currentUser);
 					else
 						throw {
 							event: message.event,
 							message: 'Unknown event type'
 						};
 				} catch(err) {
-					console.log(err);
 					responseMessage = {
 						event: 'error',
 						data: err,
 						callback: message.callback
 					}
+				}
+
+				if (responseMessage.data && responseMessage.data.authed) {
+					currentUser.authed = true;
+					currentUser.id = responseMessage.data.userId;
 				}
 
 				ws.send(JSON.stringify(responseMessage));

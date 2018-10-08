@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
-process.stdin.resume();
+//process.stdin.resume();
 
-let hasClosed = false;
-function exitHandler() {
-	if (!hasClosed) {
-		hasClosed = true;
-		console.log("Shutting down...");
-
-		process.exit();
-	}
-}
+//let hasClosed = false;
+//function exitHandler() {
+//	if (!hasClosed) {
+//		hasClosed = true;
+//		console.log("Shutting down...");
+//
+//		process.exit();
+//	}
+//}
 
 // do something when app is closing
 //process.on('exit', exitHandler.bind(null));
@@ -42,3 +42,4 @@ port = port || '80';
 //app.set('port', port);
 
 app.listen(port);
+module.export = app;
