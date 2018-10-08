@@ -169,7 +169,7 @@ module.exports = {
 						hash,
 						dateModified: dateAdded,
 						dateAdded,
-						uploader: data.user.username
+						uploader: await database.getUserDisplayName(currentUser.id)
 					};
 
 //	    			if (!await database.getArtistByName(artist))
