@@ -1,12 +1,47 @@
 const Random = require('random-js');
 const random = new Random(Random.engines.mt19937().autoSeed());
+const WS = require('uws');
 
 const Auth = require('./util/auth');
 const Sockets = require('./sockets');
 
-// Create wss
+const config = require('./config/config');
+
+const fs = require('fs');
+const http = config.websocket.certLocation && config.websocket.keyLocation ? require('https') : require('http');
+let socketOptions = config.websocket;
+
+if (config.websocket.certLocation && config.websocket.keyLocation) {
+	socketOptions.key = fs.readFileSync(config.websocket.keyLocation);
+	socketOptions.cert = fs.readFileSync(config.websocket.certLocation);
+}
+
+let port = 80;
+let webSocketPort = 8080;
+
+for (let i = 0; i < process.argv.length; i++) {
+	switch (process.argv[i]) {
+		case '--port':
+		case '-p':
+			port = process.argv[++i];
+			break;
+		case '--websocketport':
+		case '-s':
+			webSocketPort = process.argv[++i];
+			break;
+	}
+}
 
 // Initialize services
 const auth = new Auth(random);
+const server = require('./util/server');
+const webSocketServer = new http.createServer(socketOptions);
+
+// Create wss
+const wss = new WS.Server({server: webSocketServer});
+
+// Set up websocket handler
 const sockets = new Sockets(wss, auth, random);
-const webserver = require('./webserver');
+
+server.listen(port);
+webSocketServer.listen(webSocketPort);

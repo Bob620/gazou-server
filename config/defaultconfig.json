@@ -18,5 +18,9 @@
   "aws": {
     "accessKeyId": "",
     "secretAccessKey": ""
+  },
+  "websocket": {
+    "keyLocation": "",
+    "certLocation": ""
   }
 }

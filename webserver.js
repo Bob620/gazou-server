@@ -25,21 +25,3 @@
 
 // catches uncaught exceptions
 //process.on('uncaughtException', exitHandler.bind(null));
-
-let port = undefined;
-for (let i = 0; i < process.argv.length; i++) {
-	switch (process.argv[i]) {
-		case '--port':
-		case '-p':
-			port = process.argv[++i];
-			break;
-	}
-}
-
-const app = require('./util/server');
-
-port = port || '80';
-//app.set('port', port);
-
-app.listen(port);
-module.export = app;
