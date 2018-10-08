@@ -44,8 +44,8 @@ module.exports = {
 				if (!oldMetadata.includes(tag)) {
 					newMetadata.addTags.push(tag);
 
-	//				if (!await database.getTagByName(tag))
-	//					await database.createTag(tag);
+//					if (!await database.getTagByName(tag))
+//						await database.createTag(tag);
 				}
 
 			for (const tag of removeTags)

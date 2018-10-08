@@ -1,5 +1,4 @@
 const config = require('../config/config');
-const constants = require('./constants');
 
 const database = require('./database');
 
@@ -165,3 +164,5 @@ class Auth {
 		}, 30000);
 	}
 }
+
+module.exports = Auth;

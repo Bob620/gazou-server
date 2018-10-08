@@ -1,21 +1,9 @@
 const database = require('./database');
-const uuidModify = require('./uuidmodify');
 
 const constants = require('./constants');
 
-class Search {
-	constructor() {
-		this.data = {
-			lists: {
-				artists: `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`,
-				tags: `${constants.redis.DOMAIN}:${constants.redis.TAGS}`,
-				imageTagged: `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}`,
-				imageArtists: `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}`
-			}
-		}
-	}
-
-	async indexImage(uuid, {addTags, removeTags, tags, artist, uploader, dateModified}, oldMetadata) {
+module.exports = {
+	indexImage: async (uuid, {addTags, removeTags, tags, artist, uploader, dateModified}, oldMetadata) => {
 		if (uuid) {
 			if (tags)
 				for (const tag of tags) {
@@ -64,9 +52,8 @@ class Search {
 //				if (!await database.getUploaderByName(uploader))
 //					await database.addImageToUploader(uploader, uuid);
 		}
-	}
-
-	async unindexImage(uuid) {
+	},
+	unindexImage: async (uuid) => {
 		if (uuid) {
 			const metadata = await database.getImageMetadata(uuid);
 			if (!metadata)
@@ -93,6 +80,4 @@ class Search {
 //			}
 		}
 	}
-}
-
-module.exports = new Search();
+};
