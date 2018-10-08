@@ -161,8 +161,7 @@ module.exports = {
 //						await database.createTag(tag);
 
 				// Add image to database, and wait for the image to be uploaded
-				// Assume the image isn't uploaded, add `true`
-				await database.addImageMetadata(metadata.uuid, metadata, tags, false);
+				await database.addImageMetadata(metadata.uuid, metadata, tags);
 				await database.addHash(hash);
 
 //				metadata.tags = tags;

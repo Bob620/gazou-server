@@ -8,5 +8,14 @@
   "website": {
     "keyLocation": "",
     "certLocation": ""
+  },
+  "s3": {
+    "maxUploadSec": 5,
+    "bucket": ""
+  },
+  "aws": {
+    "accessKeyId": "",
+    "secretAccessKey": "",
+    "region": ""
   }
 }

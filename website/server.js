@@ -6,7 +6,18 @@ const serverHead = {
 	'Server': 'nodejs'
 };
 
+const aws = require('aws-sdk');
+
+aws.config.update(config.aws);
+
+const S3Upload = require('../util/s3upload.js');
+const s3Upload = new S3Upload();
+
 const fs = require('fs');
+const crypto = require('crypto');
+const util = require('util');
+const readFilePromise = util.promisify(fs.readFile);
+
 const http = config.website.certLocation && config.website.keyLocation ? require('https') : require('http');
 let options = {};
 
@@ -14,6 +25,8 @@ if (config.website.certLocation && config.website.keyLocation) {
 	options.key = fs.readFileSync(config.website.keyLocation);
 	options.cert = fs.readFileSync(config.website.certLocation);
 }
+
+const multiparty = require('multiparty');
 
 const server = http.createServer(options, async (req, res) => {
 	function sendResponse(statusCode, file='', head={}) {
@@ -48,6 +61,11 @@ const server = http.createServer(options, async (req, res) => {
 				res.write('<head><style>h1{text-align:center;width:100vw;top:6vh;position:relative;font-size:5em;}</style></head><body><h1>404</h1></body>');
 				res.end();
 				break;
+			case 410:
+				res.writeHead(410, 'Gone', head);
+				res.write(file);
+				res.end();
+				break;
 		}
 	}
 
@@ -59,7 +77,61 @@ const server = http.createServer(options, async (req, res) => {
 
 		switch(req.method.toUpperCase() + '-' + command.toLowerCase()) {
 			case 'POST-upload':
-				sendResponse(200, {upload: input});
+				try {
+					const uuid = input[0];
+					if (uuid.length === 36 && !await database.imageIsUploaded(uuid)) {
+						const form = new multiparty.Form({
+							autoFiles: true,
+							maxFilesSize: constants.image.MAXSIZE
+						});
+						form.parse(req, async (err, fields, files) => {
+							if (err)
+								sendResponse(400);
+
+							if (files.image && files.image[0]) {
+								const file = files.image[0];
+								let fileType;
+								switch(file.headers["content-type"]) {
+									case 'image/jpeg':
+										fileType = '.jpg';
+										break;
+									case 'image/png':
+										fileType = '.png';
+										break;
+									case 'image/gif':
+										fileType = '.gif';
+										break;
+								}
+
+								if (fileType && file.size <= constants.image.MAXSIZE) {
+									const hash = crypto.createHash('sha1');
+									const [fileData, metadata] = await Promise.all([readFilePromise(file.path), database.getImageMetadata(uuid)]);
+									hash.update(fileData);
+									if (hash.digest('hex') === metadata.hash) {
+										try {
+											await database.updateImageMetadata(uuid, {size: file.size});
+											await database.setImageUploaded(uuid);
+
+											const s3Details = await s3Upload.push(file.path, uuid + fileType, file.headers["content-type"]);
+											console.log(s3Details);
+											sendResponse(200);
+										} catch(err) {
+											await database.setImageNotUploaded(uuid);
+											console.log(err);
+											sendResponse(500);
+										}
+									} else
+										sendResponse(400);
+								} else
+									sendResponse(400);
+							} else
+								sendResponse(400);
+						});
+					} else
+						sendResponse(410); // Image is already uploaded or does not exist
+				} catch(err) {
+					sendResponse(500); // RIP
+				}
 				break;
 			case 'GET-get':
 				switch(input[0]) {

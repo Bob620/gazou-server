@@ -20,7 +20,10 @@
   },
   "homepage": "https://github.com/Bob620/gazou-server#readme",
   "dependencies": {
+    "aws-sdk": "^2.329.0",
+    "multiparty": "^4.2.1",
     "redis": "^2.8.0",
+    "s3-upload-stream": "^1.0.7",
     "uuid": "^3.3.2"
   }
 }

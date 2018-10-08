@@ -18,5 +18,8 @@
   },
   "search": {
     "MAXMAX": 100
+  },
+  "image": {
+    "MAXSIZE": 50000000
   }
 }
