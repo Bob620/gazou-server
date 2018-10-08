@@ -36,7 +36,7 @@ for (let i = 0; i < process.argv.length; i++) {
 	}
 }
 
-const app = require('./website/server');
+const app = require('./util/server');
 
 port = port || '80';
 //app.set('port', port);

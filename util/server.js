@@ -1,6 +1,6 @@
 const config = require('../config/config');
-const constants = require('../util/constants');
-const database = require('../util/database');
+const constants = require('./constants');
+const database = require('./database');
 
 const serverHead = {
 	'Server': 'nodejs'
@@ -10,7 +10,7 @@ const aws = require('aws-sdk');
 
 aws.config.update(config.aws);
 
-const S3Upload = require('../util/s3upload.js');
+const S3Upload = require('./s3upload.js');
 const s3Upload = new S3Upload();
 
 const fs = require('fs');
