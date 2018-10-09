@@ -19,8 +19,8 @@ class Auth {
 		this.data.client.on('message', async message => {
 			try {
 				if (config.discord.adminUsers.includes(message.author.id) && message.cleanContent.startsWith(config.discord.commandPrefix)) {
-					const [command, ...input] = message.cleanContent.slice(1);
-					switch(command.toLowerCase()) {
+					const [command, ...input] = message.cleanContent.split(' ');
+					switch(command.toLowerCase().substr(1)) {
 						case 'adduploader':
 							if (input[0] && input[1]) {
 								const potentialUserId = await database.getUserDisplayName(input[0]);
@@ -36,7 +36,7 @@ class Auth {
 							break;
 						case 'revokeuploader':
 							if (input[0]) {
-								const userId = await database.getUserId(input[1]);
+								const userId = await database.getUserId(input[0]);
 								if (userId) {
 									await database.revokeUploader(userId);
 									await message.author.send(`Permissions revoked from ${input[0]}`);
@@ -47,7 +47,7 @@ class Auth {
 							break;
 						case 'approveuploader':
 							if (input[0]) {
-								const userId = await database.getUserId(input[1]);
+								const userId = await database.getUserId(input[0]);
 								if (userId) {
 									await database.approveUploader(userId);
 									await message.author.send(`Permissions approved for ${input[0]}`);
@@ -129,6 +129,8 @@ class Auth {
 				console.log(err);
 			}
 		});
+
+		this.data.client.login(config.discord.discordToken);
 	}
 
 	testToken(userId, testToken) {
@@ -153,15 +155,20 @@ class Auth {
 	}
 
 	async requestAuth(userId) {
-		const token = this.data.random.string();
-		this.data.activeAuthRequests.set(userId, {token, tries: 0});
-		const user = await this.data.client.fetchUser(userId);
-		user.send(`Your login token is: \`${token}\`\nThis token will expire in 30 seconds or after 2 tries.\nIf this message was not expected, someone attempted to log into ${config.uploadUrl} using your username.`);
-		setTimeout(() => {
-			try {
-				this.voidRequest(userId);
-			} catch(err) {}
-		}, 30000);
+		try {
+			const token = this.data.random.string(6);
+			this.data.activeAuthRequests.set(userId, {token, tries: 0});
+			const user = await this.data.client.fetchUser(userId);
+			user.send(`Your login token is: \`${token}\`\nThis token will expire in 30 seconds or after 2 tries.\nIf this message was not expected, someone attempted to log into ${config.uploadUrl} using your username.`);
+			setTimeout(() => {
+				try {
+					this.voidRequest(userId);
+				} catch (err) {
+				}
+			}, 30000);
+		} catch(err) {
+			console.log(err);
+		}
 	}
 }
 

@@ -49,10 +49,11 @@ class Sockets {
 					}
 				}
 
-				if (responseMessage.data && responseMessage.data.authed) {
+				if (responseMessage.data.beginAuth)
+					currentUser.id = message.data.id;
+
+				if (responseMessage.data && responseMessage.data.authed)
 					currentUser.authed = true;
-					currentUser.id = responseMessage.data.userId;
-				}
 
 				ws.send(JSON.stringify(responseMessage));
 			});

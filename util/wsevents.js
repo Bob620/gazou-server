@@ -157,7 +157,8 @@ module.exports = {
 		}
 	},
 	upload: async ({hash, artist='', tags=[]}, {}, currentUser) => {
-		if (currentUser.authed && await database.uploaderCanUpload(currentUser.id)) {
+		const canUpload = await database.uploaderCanUpload(currentUser.id);
+		if (currentUser.authed && canUpload) {
 			if (hash && typeof hash === 'string')
 				if (!await database.hasHash(hash)) {
 					artist = artist.toLowerCase();
@@ -166,7 +167,7 @@ module.exports = {
 					const metadata = {
 						uuid: uuidv1(),
 						artist: artist ? artist : 'no artist',
-						hash,
+						hash: hash.toLowerCase(),
 						dateModified: dateAdded,
 						dateAdded,
 						uploader: await database.getUserDisplayName(currentUser.id)
@@ -271,8 +272,8 @@ module.exports = {
 					message: 'Already authenticated'
 				};
 			else {
-				if (message[0] && await database.getUserDisplayName(message[0])) {
-					await auth.requestAuth(message[0]);
+				if (message.id && await database.getUserDisplayName(message.id)) {
+					await auth.requestAuth(message.id);
 					return {
 						beginAuth: true
 					};
@@ -290,7 +291,7 @@ module.exports = {
 					message: 'Already authenticated'
 				};
 			else {
-				if (message[0] && auth.testToken(currentUser.id, message[0])) {
+				if (message.token && auth.testToken(currentUser.id, message.token)) {
 					return {
 						authed: true
 					};

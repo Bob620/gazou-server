@@ -174,8 +174,9 @@ const database = {
 	setImageNotUploaded: uuid => {
 		return redis.h.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded', true);
 	},
-	addUploader: (userId, displayName) => {
-		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, displayName);
+	addUploader: async (userId, displayName) => {
+		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, displayName);
+		return await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload', true);
 	},
 	revokeUploader: userId => {
 		return redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload', false);
@@ -183,14 +184,15 @@ const database = {
 	approveUploader: userId => {
 		return redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload', true);
 	},
-	uploaderCanUpload: userId => {
-		return redis.h.get(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload');
+	uploaderCanUpload: async userId => {
+		return !!await redis.h.get(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}:${userId}`, 'canupload');
 	},
 	updateUploader: (userId, displayName) => {
 		return redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, 'XX', userId, displayName);
 	},
-	getUserDisplayName: userId => {
-		return redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, userId);
+	getUserDisplayName: async userId => {
+		const names = await  redis.z.rangeByScore(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, userId);
+		return names[0];
 	},
 	getUserId: displayName => {
 		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, displayName);
