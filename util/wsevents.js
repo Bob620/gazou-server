@@ -190,7 +190,7 @@ module.exports = {
 
 					return {
 						uuid: metadata.uuid,
-						link: `${config.uploadUrl}/${metadata.uuid}`
+						uploadLink: `${config.uploadUrl}/${metadata.uuid}`
 					};
 				} else
 					throw {
