@@ -44,6 +44,11 @@ const server = http.createServer(options, async (req, res) => {
 				res.write(file);
 				res.end();
 				break;
+			case 201:
+				res.writeHead(201, 'Created', head);
+				res.write(file);
+				res.end();
+				break;
 			case 500:
 			default:
 				res.writeHead(500, 'Internal Server Error', head);
@@ -114,7 +119,9 @@ const server = http.createServer(options, async (req, res) => {
 
 											const s3Details = await s3Upload.push(file.path, uuid + fileType, file.headers["content-type"]);
 											console.log(s3Details);
-											sendResponse(200);
+											sendResponse(201, {
+												link: `${config.imageUrl}/${uuid}${fileType}`
+											});
 										} catch(err) {
 											await database.setImageNotUploaded(uuid);
 											console.log(err);
