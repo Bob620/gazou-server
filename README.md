@@ -10,6 +10,8 @@ You first need to copy the defaultConfig.json to config.json and then change the
 
 In order to change the ports for http/webserver you cna use command line commands `-p` or `--httpport` and `-s` or `--websocketport` followed by the port wanted.
 
+default ports are 80 for webserver and 8080 for websocket server.
+
 If a cert/key location is provided in the server configs, it will attempt to find and start an https server for either or both servers.
 
 In order to run the server you need to have a redis server set up it can negotiate to, can be configured from the config.json file.
