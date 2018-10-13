@@ -271,18 +271,16 @@ module.exports = {
 					event: 'authenticate',
 					message: 'Already authenticated'
 				};
-			else {
-				if (message.id && await database.getUserDisplayName(message.id)) {
-					await auth.requestAuth(message.id);
-					return {
-						beginAuth: true
-					};
-				} else
-					throw {
-						event: 'authenticate',
-						message: 'Invalid user'
-					};
-			}
+			if (message.id && await database.getUserDisplayName(message.id)) {
+				await auth.requestAuth(message.id);
+				return {
+					beginAuth: true
+				};
+			} else
+				throw {
+					event: 'authenticate',
+					message: 'Invalid user'
+				};
 		},
 		submit: async (message, {auth}, currentUser) => {
 			if (currentUser.authed)
@@ -290,25 +288,23 @@ module.exports = {
 					event: 'authenticate',
 					message: 'Already authenticated'
 				};
-			else {
-				if (message.token && auth.testToken(currentUser.id, message.token)) {
-					return {
-						authed: true
-					};
-				} else
-					throw {
-						event: 'authenticate',
-						message: 'Invalid token'
-					};
-			}
+			if (message.token && auth.testToken(currentUser.id, message.token)) {
+				return {
+					authed: true
+				};
+			} else
+				throw {
+					event: 'authenticate',
+					message: 'Invalid token'
+				};
 		}
 	},
 	get: {
 		single: async ({uuid}) => {
-			if (uuid === undefined || typeof uuid !== 'string')
+			if (uuid || typeof uuid !== 'string' || uuid.length !== 36)
 				throw {
 					event: 'get.single',
-					message: 'Undefined uuid'
+					message: 'Invalid uuid'
 				};
 			const item = await database.getImageMetadata(uuid);
 			if (item.hash)
@@ -326,9 +322,11 @@ module.exports = {
 				};
 			let metadata = {};
 			for (const uuid of uuids) {
-				const item = await database.getImageMetadata(uuid);
-				if (item.hash)
-					metadata[uuid] = item;
+				if (uuid || typeof uuid === 'string' || uuid.length === 36) {
+					const item = await database.getImageMetadata(uuid);
+					if (item.hash)
+						metadata[uuid] = item;
+				}
 			}
 			return metadata;
 		},
@@ -338,5 +336,35 @@ module.exports = {
 		batchRandom: async ({count=10}, {random}) => {
 
 		}
+	},
+	has: {
+		singleHash: async ({hash}) => {
+			if (hash || typeof hash !== 'string' || hash.length !== 40)
+				throw {
+					event: 'has.singleHash',
+					message: 'Invalid hash'
+				};
+			if (await database.hasHash(hash))
+				return [
+					hash
+				];
+			else
+				return [];
+		},
+		batchHash: async ({hashes}) => {
+			if (hashes === undefined || hashes.length < 0)
+				throw {
+					event: 'has.batchHash',
+					message: 'Undefined hashes'
+				};
+			let hasHashes = [];
+			for (const hash of hashes) {
+				if (hash || typeof hash === 'string' || hash.length === 40) {
+					if (await database.hasHash(hash))
+						hasHashes.push(hash);
+				}
+			}
+			return hasHashes;
+		},
 	}
 };
