@@ -16,12 +16,13 @@ if (config.websocket.certLocation && config.websocket.keyLocation) {
 	socketOptions.cert = fs.readFileSync(config.websocket.certLocation);
 }
 
+// Default Ports
 let port = 80;
 let webSocketPort = 8080;
 
 for (let i = 0; i < process.argv.length; i++) {
 	switch (process.argv[i]) {
-		case '--port':
+		case '--httpport':
 		case '-p':
 			port = process.argv[++i];
 			break;
