@@ -1,6 +1,6 @@
 const Random = require('random-js');
 const random = new Random(Random.engines.mt19937().autoSeed());
-const WS = require('uws');
+const WS = require('ws');
 
 const Auth = require('./util/auth');
 const Sockets = require('./sockets');

@@ -28,6 +28,11 @@
     "redis": "^2.8.0",
     "s3-upload-stream": "^1.0.7",
     "uuid": "^3.3.2",
-    "uws": "^10.148.1"
+    "uws": "^10.148.1",
+    "ws": "latest"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.0",
+    "utf-8-validate": "^5.0.1"
   }
 }
