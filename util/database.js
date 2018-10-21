@@ -163,7 +163,7 @@ const database = {
 		return redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'locked');
 	},
 	checkAndLockImage: async uuid => {
-		return !!await redis.eval("local isLocked = redis.call('hget', KEYS[1], 'locked') if not isLocked then redis.call('hmset', KEYS[1], 'locked', 1) end return isLocked", 1, `${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`);
+		return !!await redis.eval("local isLocked = redis.call('hget', KEYS[1], 'locked') if not isLocked then redis.call('hmset', KEYS[1], 'locked', 1) end return not isLocked", 1, `${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`);
 	},
 	imageIsUploaded: async uuid => {
 		return !await redis.h.get(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded');
