@@ -190,7 +190,7 @@ module.exports = {
 
 					return {
 						uuid: metadata.uuid,
-						uploadLink: `${config.uploadUrl}/${metadata.uuid}`
+						uploadLink: `${config.uploadUrl}/upload/${metadata.uuid}`
 					};
 				} else
 					throw {
@@ -301,7 +301,7 @@ module.exports = {
 	},
 	get: {
 		single: async ({uuid}) => {
-			if (uuid || typeof uuid !== 'string' || uuid.length !== 36)
+			if (!uuid || typeof uuid !== 'string' || uuid.length !== 36)
 				throw {
 					event: 'get.single',
 					message: 'Invalid uuid'
