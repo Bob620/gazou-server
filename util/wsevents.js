@@ -3,8 +3,15 @@ const uuidv1 = require('uuid/v1');
 const config = require('../config/config');
 const constants = require('./constants');
 
+const aws = require('aws-sdk');
+
+aws.config.update(config.aws);
+
+const S3Upload = require('./s3upload.js');
 const database = require('./database');
 const search = require('./search');
+
+const s3Upload = new S3Upload();
 
 module.exports = {
 	update: async ({uuid, metadata: {uploader='', artist='', addTags=[], removeTags=[]}}, {}, currentUser) => {
@@ -99,13 +106,15 @@ module.exports = {
 
 				await search.unindexImage(uuid);
 				const [removed] = await database.removeImageMetadata(uuid);
-				// Allow the image to be reuploaded
-				await database.removeHash(metadata.hash);
-
 				if (!removed) throw {
 					event: 'remove.single',
 					message: 'Unable to delete the image'
 				};
+
+				// Allow the image to be reuploaded
+				await database.removeHash(metadata.hash);
+				// Remove the image from s3
+				await s3Upload.delete(`${metadata.uuid}.${metadata.type}`);
 
 				// Image lock is removed automatically when deleted, return safely
 				// return a confirmation of deletion
@@ -156,46 +165,52 @@ module.exports = {
 				};
 		}
 	},
-	upload: async ({hash, artist='', tags=[]}, {}, currentUser) => {
+	upload: async ({hash, type, artist='', tags=[]}, {}, currentUser) => {
 		const canUpload = await database.uploaderCanUpload(currentUser.id);
 		if (currentUser.authed && canUpload) {
 			if (hash && typeof hash === 'string')
-				if (!await database.hasHash(hash)) {
-					artist = artist.toLowerCase();
+				if (type === 'png' || type === 'jpg' || type === 'jpeg' || type === 'gif')
+					if (!await database.hasHash(hash)) {
+						artist = artist.toLowerCase();
 
-					const dateAdded = Date.now();
-					const metadata = {
-						uuid: uuidv1(),
-						artist: artist ? artist : 'no artist',
-						hash: hash.toLowerCase(),
-						dateModified: dateAdded,
-						dateAdded,
-						uploader: await database.getUserDisplayName(currentUser.id)
-					};
+						const dateAdded = Date.now();
+						const metadata = {
+							uuid: uuidv1(),
+							artist: artist ? artist : 'no artist',
+							hash: hash.toLowerCase(),
+							dateModified: dateAdded,
+							dateAdded,
+							type,
+							uploader: await database.getUserDisplayName(currentUser.id)
+						};
 
-//	    			if (!await database.getArtistByName(artist))
-//		    			await database.createArtist(artist);
+	//	    			if (!await database.getArtistByName(artist))
+	//		    			await database.createArtist(artist);
 
-//			    	for (const tag of tags)
-//				    	if (!await database.getTagByName(tag))
-//					    	await database.createTag(tag);
+	//			    	for (const tag of tags)
+	//				    	if (!await database.getTagByName(tag))
+	//					    	await database.createTag(tag);
 
-					// Add image to database, and wait for the image to be uploaded
-					await database.addImageMetadata(metadata.uuid, metadata, tags);
-					await database.addHash(hash);
+						// Add image to database, and wait for the image to be uploaded
+						await database.addImageMetadata(metadata.uuid, metadata, tags);
+						await database.addHash(hash);
 
-					//				metadata.tags = tags;
-					// DISABLE THIS UNTIL IMAGE UPLOADED
-					await search.indexImage(metadata.uuid, metadata);
+						metadata.tags = tags;
+						await search.indexImage(metadata.uuid, metadata);
 
-					return {
-						uuid: metadata.uuid,
-						uploadLink: `${config.uploadUrl}/upload/${metadata.uuid}`
-					};
-				} else
+						return {
+							uuid: metadata.uuid,
+							uploadLink: `${config.uploadUrl}/upload/${metadata.uuid}`
+						};
+					} else
+						throw {
+							event: 'upload',
+							message: 'Image already exists'
+						};
+				else
 					throw {
 						event: 'upload',
-						message: 'Image already exists'
+						message: 'Image type required'
 					};
 			else
 				throw {
