@@ -2,8 +2,9 @@ const fs = require('fs');
 
 const config = require('../config/config');
 
-const aws = require('aws-sdk'),
-	UploadStream = require('s3-upload-stream')(new aws.S3({apiVersion: '2006-03-01'}));
+const aws = require('aws-sdk');
+const s3 = new aws.S3({apiVersion: '2006-03-01'});
+	UploadStream = require('s3-upload-stream')(s3);
 
 class S3Upload {
 	constructor({maxUploadSec=config.s3.maxUploadSec, bucket=config.s3.bucket, acl='public-read'}={}) {
@@ -17,6 +18,35 @@ class S3Upload {
 			this.uploadedThisSec = 0;
 			this.upload();
 		}, 1000);
+	}
+
+	delete(itemKey) {
+		if (typeof itemKey === 'string')
+			return new Promise((resolve, reject) => {
+				s3.deleteObject({
+					Bucket: this.bucket,
+					Key: itemKey
+				}, (err, data) => {
+					if (err)
+						reject(err);
+					else
+						resolve(data);
+				});
+			});
+		if (itemKey.length < 1000)
+			return new Promise((resolve, reject) => {
+				s3.deleteObjects({
+					Bucket: this.bucket,
+					Delete: {
+						Objects: itemKey.map(Key => {return {Key}})
+					}
+				}, (err, data) => {
+					if (err)
+						reject(err);
+					else
+						resolve(data);
+				});
+			});
 	}
 
 	upload() {
