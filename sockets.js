@@ -8,11 +8,19 @@ class Sockets {
 			random
 		};
 
+		wss.on('error', err => {
+			console.log(err);
+		});
+
 		wss.on('connection', ws => {
 			let currentUser = {
 				authed: false,
 				id: ''
 			};
+
+			ws.on('error', err => {
+				console.log(err);
+			});
 
 			ws.on('message', async message => {
 				message = JSON.parse(message);
