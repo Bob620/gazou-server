@@ -13,6 +13,19 @@ const search = require('./search');
 
 const s3Upload = new S3Upload();
 
+function* nextIntersectSearchId(type) {
+	yield `${type}0`;
+	yield `${type}1`;
+	yield `${type}2`;
+	yield `${type}3`;
+	yield `${type}4`;
+	yield `${type}5`;
+	yield `${type}6`;
+	yield `${type}7`;
+	yield `${type}8`;
+	yield `${type}9`;
+}
+
 module.exports = {
 	update: async ({uuid, metadata: {uploader='', artist='', addTags=[], removeTags=[]}}, {}, currentUser) => {
 		if (currentUser.authed && await database.uploaderCanUpload(currentUser.id)) {
@@ -269,7 +282,7 @@ module.exports = {
 						}));
 
 					const tagIds = await Promise.all(tagPromises);
-					return await database.findImagesByTags(tagIds, startPosition, count);
+					return await database.findImagesByTags(nextIntersectSearchId('tags').next().value, tagIds, startPosition, count);
 			}
 		},
 		randomByArtist: async ({name, count=10}, {random}) => {
