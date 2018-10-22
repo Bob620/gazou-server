@@ -98,35 +98,37 @@ const server = http.createServer(options, async (req, res) => {
 								let fileType;
 								switch(file.headers["content-type"]) {
 									case 'image/jpeg':
-										fileType = '.jpg';
+										fileType = 'jpg';
 										break;
 									case 'image/png':
-										fileType = '.png';
+										fileType = 'png';
 										break;
 									case 'image/gif':
-										fileType = '.gif';
+										fileType = 'gif';
 										break;
 								}
 
 								if (fileType && file.size <= constants.image.MAXSIZE) {
 									const hash = crypto.createHash('sha1');
 									const [fileData, metadata] = await Promise.all([readFilePromise(file.path), database.getImageMetadata(uuid)]);
-									hash.update(fileData);
-									if (hash.digest('hex') === metadata.hash) {
-										try {
-											await database.updateImageMetadata(uuid, {size: file.size});
-											await database.setImageUploaded(uuid);
+									if (metadata.type === fileType || (metadata.type === 'jpg' && fileType === 'jpeg')) {
+										hash.update(fileData);
+										if (hash.digest('hex') === metadata.hash) {
+											try {
+												await database.updateImageMetadata(uuid, {size: file.size});
+												await database.setImageUploaded(uuid);
 
-											const s3Details = await s3Upload.push(file.path, uuid + fileType, file.headers["content-type"]);
-											console.log(s3Details);
-											sendResponse(201, {
-												link: `${config.imageUrl}/${uuid}${fileType}`
-											});
-										} catch(err) {
-											await database.setImageNotUploaded(uuid);
-											console.log(err);
-											sendResponse(500);
-										}
+												await s3Upload.push(file.path, `${uuid}.${fileType}`, file.headers["content-type"]);
+												sendResponse(201, {
+													link: `${config.imageUrl}/${uuid}.${fileType}`
+												});
+											} catch (err) {
+												await database.setImageNotUploaded(uuid);
+												console.log(err);
+												sendResponse(500);
+											}
+										} else
+											sendResponse(400);
 									} else
 										sendResponse(400);
 								} else
