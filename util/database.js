@@ -40,7 +40,7 @@ const database = {
 				...removeTags
 			);
 	},
-	addImageMetadata: async (uuid, {hash, uploader, dateAdded=Date.now(), artist, dateModified=Date.now()}, tags) => {
+	addImageMetadata: async (uuid, {hash, type, uploader, dateAdded=Date.now(), artist, dateModified=Date.now()}, tags) => {
 		// Add metadata
 		await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`,
 			'dateModified', dateModified,
@@ -50,7 +50,8 @@ const database = {
 			'uploader', uploader,
 			'uuid', uuid,
 			'notuploaded', true,
-			'size', 0
+			'size', 0,
+			'type', type
 		);
 
 		// Add the tags
@@ -78,7 +79,7 @@ const database = {
 			]);
 	},
 	findImagesByLex: async (minTimestamp, maxTimestamp, start=0, count=10) => {
-		const lexUuids = await redis.z.rangeByLex(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, '['+uuidModify.timestampToUlid(minTimestamp), '['+uuidModify.timestampToUlid(maxTimestamp), 'LIMIT', start, count);
+		const lexUuids = await redis.z.rangeByLex(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, '['+uuidModify.timestampToUlid(minTimestamp), '['+`${uuidModify.timestampToUlid(maxTimestamp)}-ffff-ffffffffffff`, 'LIMIT', start, count);
 
 		let normUuid = [];
 		for (const lexUuid of lexUuids)
