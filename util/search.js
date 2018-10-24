@@ -1,6 +1,9 @@
 const database = require('./database');
+const IntersectionSearch = require('./intersectionsearch');
 
-const constants = require('./constants');
+const config = require('../config/config');
+
+const intersectionSearch = new IntersectionSearch(config.search.maxIntersections, config.search.maxConcurrentSearches);
 
 module.exports = {
 	indexImage: async (uuid, {addTags, removeTags, tags, artist, uploader, dateModified}, oldMetadata) => {
@@ -79,5 +82,6 @@ module.exports = {
 //					await database.removeImageFromUploader(uploader, uuid);
 //			}
 		}
-	}
+	},
+	byTagIds: intersectionSearch.searchByTags
 };

@@ -110,6 +110,27 @@ const database = {
 			normUuid.push(uuidModify.toRegular(lexUuid));
 		return normUuid;
 	},
+	setImageIntersectionMeta: async (intersectionStore, {tags, locked=true}) => {
+		const intersection = `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`;
+		await redis.hm.set(`${intersection}:${constants.redis.search.intersection.METADATA}`, 'locked', locked);
+		await redis.s.rem(`${intersection}:${constants.redis.search.intersection.TAGS}`, ...await redis.s.members(`${intersection}:${constants.redis.search.intersection.TAGS}`));
+		await redis.s.add(`${intersection}:${constants.redis.search.intersection.TAGS}`, ...tags);
+	},
+	getImageIntersectionMeta: async intersectionStore => {
+		const intersection = `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`;
+		let metadata = await redis.s.members(`${intersection}:${constants.redis.search.intersection.METADATA}`);
+		metadata.tags = await redis.s.members(`${intersection}:${constants.redis.search.intersection.TAGS}`);
+		return metadata;
+	},
+	checkAndLockImageIntersection: async intersectionStore => {
+		return !!await redis.eval("local isLocked = redis.call('hget', KEYS[1], 'locked') if not isLocked then redis.call('hmset', KEYS[1], 'locked', 1) end return not isLocked", 1, `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`);
+	},
+	lockImageIntersection: intersectionStore => {
+		return redis.h.set(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked', true);
+	},
+	unlockImageIntersection: intersectionStore => {
+		return redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked');
+	},
 	findImagesByTags: async (intersectionStore, tagIds, start=0, count=10) => {
 		await redis.z.interstore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`, tagIds.length, ...tagIds.map(tagId => {
 			return `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`;
@@ -173,7 +194,7 @@ const database = {
 		return redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded');
 	},
 	setImageNotUploaded: uuid => {
-		return redis.h.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded', true);
+		return redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, 'notuploaded', true);
 	},
 	addUploader: async (userId, displayName) => {
 		await redis.z.add(`${constants.redis.DOMAIN}:${constants.redis.UPLOADERS}`, userId, displayName);

@@ -14,7 +14,11 @@
     "search": {
       "ARTISTIMAGES": "artists",
       "TAGIMAGES": "tags",
-      "TAGIMAGEINTERSECTIONS": "tagintersections"
+      "TAGIMAGEINTERSECTIONS": "tagintersections",
+      "intersection": {
+        "METADATA": "metadata",
+        "TAGS": "tags"
+      }
     }
   },
   "search": {

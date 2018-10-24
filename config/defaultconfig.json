@@ -22,5 +22,9 @@
   "websocket": {
     "keyLocation": "",
     "certLocation": ""
+  },
+  "search": {
+    "maxIntersections": 10,
+    "maxConcurrentSearches": 1
   }
 }
