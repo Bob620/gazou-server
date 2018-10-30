@@ -78,6 +78,18 @@ const database = {
 				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, ...Object.keys(metadata))
 			]);
 	},
+	countImages: () => {
+		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`);
+	},
+	countArtistImages: artistId => {
+		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${constants.redis.search.ARTISTIMAGES}:${artistId}`);
+	},
+	countTagImages: tagId => {
+		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${constants.redis.search.TAGIMAGES}:${tagId}`);
+	},
+	countIntersection: (type, intersection) => {
+		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${type}:${intersection}`);
+	},
 	findImagesByLex: async (minTimestamp, maxTimestamp, start=0, count=10) => {
 		const lexUuids = await redis.z.rangeByLex(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, '['+uuidModify.timestampToUlid(minTimestamp), '['+`${uuidModify.timestampToUlid(maxTimestamp)}-ffff-ffffffffffff`, 'LIMIT', start, count);
 

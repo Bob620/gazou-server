@@ -278,11 +278,28 @@ module.exports = {
 						};
 			}
 		},
-		randomByArtist: async ({name, count=10}, {random}) => {
-
+		randomByArtist: async ({name, count=1}, {random}) => {
+			const images = await database.countArtistImages();
+			if (images && images.length > 0)
+				return random.sample(images, images.length < count ? images.length : count);
+			else
+				return [];
 		},
-		randomByTags: async ({tags=[], count=10}, {random}) => {
-
+		randomByTags: async ({tags=[], count=1}, {random}, {random}) => {
+			switch(tags.length) {
+				case 0:
+					return [];
+				case 1:
+					const images = await database.countTagImages();
+					if (images && images.length > 0)
+						return random.sample(images, images.length < count ? images.length : count);
+					return [];
+				default:
+					throw {
+						event: 'search.randomByTags',
+						message: 'Currently supports max 1 tag'
+					}
+			}
 		}
 	},
 	authenticate: {
@@ -351,11 +368,11 @@ module.exports = {
 			}
 			return metadata;
 		},
-		singleRandom: async ({}, {random}) => {
-
-		},
-		batchRandom: async ({count=10}, {random}) => {
-
+		random: async ({count=1}, {random}) => {
+			const images = database.countImages();
+			if (images && images.length > 0)
+				return random.sample(images, images.length < count ? images.length : count);
+			return [];
 		}
 	},
 	has: {
