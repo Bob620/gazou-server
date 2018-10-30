@@ -237,7 +237,7 @@ module.exports = {
 			if (artistId)
 				return await database.findImagesByArtistId(artistId, startPosition, count);
 			throw {
-				event: 'tags',
+				event: 'search.artist',
 				message: `Unknown artist '${name.toLowerCase()}'`
 			};
 		},
@@ -251,7 +251,7 @@ module.exports = {
 						return await database.findImagesByTag(tagId, startPosition, count);
 					else
 						throw {
-							event: 'tags',
+							event: 'search.tags',
 							message: `Unknown tag '${tags[0]}'`
 						};
 				default:
@@ -263,13 +263,13 @@ module.exports = {
 								resolve(tagId);
 							else
 								reject({
-									event: 'tags',
+									event: 'search.tags',
 									message: `Unknown tag '${tagName}'`
 								});
 						}));
 
 					const tagIds = await Promise.all(tagPromises);
-					search.byTagIds(tagIds, startPosition, count);
+					return await search.byTagIds(tagIds, startPosition, count);
 			}
 		},
 		randomByArtist: async ({name, count=10}, {random}) => {

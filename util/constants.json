@@ -17,7 +17,8 @@
       "TAGIMAGEINTERSECTIONS": "tagintersections",
       "intersection": {
         "METADATA": "metadata",
-        "TAGS": "tags"
+        "TAGS": "tags",
+        "LIFESPAN": "lifespan"
       }
     }
   },

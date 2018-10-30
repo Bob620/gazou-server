@@ -120,6 +120,13 @@ const database = {
 		const intersection = `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`;
 		let metadata = await redis.s.members(`${intersection}:${constants.redis.search.intersection.METADATA}`);
 		metadata.tags = await redis.s.members(`${intersection}:${constants.redis.search.intersection.TAGS}`);
+		const lifespan = await redis.s.members(`${intersection}:${constants.redis.search.intersection.LIFESPAN}`);
+		if (lifespan) {
+			metadata.expired = false;
+			metadata.expires = lifespan;
+		} else
+			metadata.expired = true;
+
 		return metadata;
 	},
 	checkAndLockImageIntersection: async intersectionStore => {
@@ -128,8 +135,9 @@ const database = {
 	lockImageIntersection: intersectionStore => {
 		return redis.h.set(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked', true);
 	},
-	unlockImageIntersection: intersectionStore => {
-		return redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked');
+	unlockImageIntersection: async (intersectionStore, maxLifespan=60) => {
+		await redis.set(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}:${constants.redis.search.intersection.LIFESPAN}`, Date.now()+maxLifespan, 'EX', maxLifespan);
+		return await redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked');
 	},
 	findImagesByTags: async (intersectionStore, tagIds, start=0, count=10) => {
 		await redis.z.interstore(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`, tagIds.length, ...tagIds.map(tagId => {

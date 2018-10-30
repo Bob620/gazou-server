@@ -3,7 +3,7 @@ const IntersectionSearch = require('./intersectionsearch');
 
 const config = require('../config/config');
 
-const intersectionSearch = new IntersectionSearch(config.search.maxIntersections, config.search.maxConcurrentSearches);
+const tagSearch = new IntersectionSearch('tags', config.search.maxIntersections, config.search.maxConcurrentSearches, config.search.maxLifespan);
 
 module.exports = {
 	indexImage: async (uuid, {addTags, removeTags, tags, artist, uploader, dateModified}, oldMetadata) => {
@@ -83,5 +83,5 @@ module.exports = {
 //			}
 		}
 	},
-	byTagIds: intersectionSearch.searchByTags
+	byTagIds: tagSearch.search
 };

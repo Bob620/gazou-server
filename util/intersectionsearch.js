@@ -1,4 +1,5 @@
 const database = require('./database');
+const uuidv1 = require('uuid/v1');
 
 function* IdGenerator(type, total) {
 	while(true)
@@ -6,73 +7,128 @@ function* IdGenerator(type, total) {
 			yield `${type}:${i}`;
 }
 
-class IntersectionSearch {
-	constructor(maxIntersections = 10, maxSearches = 1) {
+
+// Could implement caching system here
+class Search {
+	constructor(tags, searches, cleanup) {
 		this.data = {
-			maxIntersections,
-			maxSearches,
-			currentSearches: 0,
-			searchQueue: [],
-			tagGenerator: new IdGenerator('tags', maxIntersections)
-		}
+			cleanup,
+			tags,
+			resolved: false,
+			rejected: false,
+			data: undefined,
+			uuid: undefined,
+			searches
+		};
 	}
 
-	async getMatchingSearchIntersection(type, data) {
-		switch(type) {
-			case 'tags':
+	addSearch(startPosition, count, resolve, reject) {
+		if (this.data.resolved) {
+			database.getImageIntersectionMeta(this.data.data).then(metadata => {
+				if (!metadata.locked && !metadata.expired && metadata.uuid === this.data.uuid)
+					database.findImagesByTags(this.data.data, this.data.tags, startPosition, count).then(data => {
+						resolve(data);
+					}).catch(() => {
+						reject('An error occurred during search request');
+					});
+			}).catch(() => {
+				reject('An error occurred during search request');
+			});
+		} else if (this.data.rejected)
+			reject(this.data.data);
+		else
+			this.data.searches.push({
+				startPosition,
+				count,
+				resolve,
+				reject
+			});
+	}
 
-				return;
-			default:
-				return;
+	async resolve(data, uuid) {
+		this.data.uuid = uuid;
+		this.data.data = data;
+		this.data.resolved = true;
+
+		const metadata = await database.getImageIntersectionMeta(this.data.data);
+		if (!metadata.locked && !metadata.expired && metadata.uuid === this.data.uuid)
+			for (const search of this.data.searches)
+				search.resolve(await database.findImagesByTags(this.data.data, this.data.tags, search.startPosition, search.count));
+		else
+			search.reject('An error occurred during search request');
+
+		this.data.cleanup();
+	}
+
+	reject(data) {
+		this.data.data = data;
+		this.data.rejected = true;
+
+		for (const search of this.data.searches)
+			search.reject(data);
+
+		this.data.cleanup();
+	}
+}
+
+class IntersectionSearch {
+	constructor(type, maxIntersections = 10, maxSearches = 1, maxIntersectionLifespan=300) {
+		this.data = {
+			type,
+			maxIntersections,
+			maxSearches,
+			maxIntersectionLifespan,
+			currentSearches: new Map(),
+			searches: new Map(),
+			searchQueue: [],
+			generator: new IdGenerator(type, maxIntersections)
 		}
 	}
 
 	async tryNextSearch() {
-		if (this.data.currentSearches < this.data.maxSearches) {
-			this.data.currentSearches++;
-			const search = this.data.searchQueue.shift();
-			if (search) {
-				const {type, data, resolve, reject} = search;
+		if (this.data.currentSearches.size < this.data.maxSearches) {
+			const tags = this.data.searchQueue.shift();
+			const search = this.data.searches.get(tags);
+			this.data.currentSearches.set(tags, search);
+			const uuid = uuidv1();
+			if (tags)
+				for (let i = 0; i < this.data.maxIntersections; i++) {
+					const intersection = this.data.generator.next().value;
+					if (await database.checkAndLockImageIntersection(intersection)) {
+						await database.setImageIntersectionMeta(intersection, {tags, uuid});
+						await database.unlockImageIntersection(intersection, this.data.maxIntersectionLifespan);
 
-				try {
-					switch(type) {
-						case 'tags':
-							for (let i = 0; i < this.data.maxIntersections; i++) {
-								const intersection = this.data.tagGenerator.next().value;
-								if (await database.checkAndLockImageIntersection(intersection)) {
-									await database.setImageIntersectionMeta(intersection, {tags: data.tags});
-									resolve(await database.findImagesByTags(intersection, data.tags, data.startPosition, data.count));
-									break;
-								}
-							}
-							break;
-						default:
-							reject('Error occurred during search');
-							break;
+						await search.resolve(intersection, uuid);
 					}
-				} catch (err) {
-					console.log(err);
-					reject('Error occurred during search');
 				}
-			}
-			this.data.currentSearches--;
+
+			this.data.currentSearches.delete(tags);
 			if (this.data.searchQueue.length > 0)
 				this.tryNextSearch();
 		}
 	}
 
-	searchByTags(tags, startPosition, count) {
+	search(tags, startPosition, count) {
 		return new Promise((resolve, reject) => {
-			this.data.searchQueue.push({
-				type: 'tags',
-				data: {
-					tags,
+			let search = this.data.searches.get(tags);
+			if (search)
+				search.addSearch({
 					startPosition,
-					count
-				},
-				resolve,
-				reject
-			});
+					count,
+					resolve,
+					reject
+				});
+			else
+				this.data.searches.set(tags, new Search(tags, [{
+					startPosition,
+					count,
+					resolve,
+					reject
+				}], () => {
+					this.data.searches.delete(tags);
+				}));
+
+			this.data.searchQueue.push(tags);
 			this.tryNextSearch();
 		});
 	}
