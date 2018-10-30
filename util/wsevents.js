@@ -255,21 +255,27 @@ module.exports = {
 							message: `Unknown tag '${tags[0]}'`
 						};
 				default:
-					let tagPromises = [];
-					for (const tagName of tags)
-						tagPromises.push(new Promise(async (resolve, reject) => {
-							const tagId = await database.getTagByName(tagName);
-							if (tagId)
-								resolve(tagId);
-							else
-								reject({
-									event: 'search.tags',
-									message: `Unknown tag '${tagName}'`
-								});
-						}));
+					if (tags.length < config.search.maxTagSearch) {
+						let tagPromises = [];
+						for (const tagName of tags)
+							tagPromises.push(new Promise(async (resolve, reject) => {
+								const tagId = await database.getTagByName(tagName);
+								if (tagId)
+									resolve(tagId);
+								else
+									reject({
+										event: 'search.tags',
+										message: `Unknown tag '${tagName}'`
+									});
+							}));
 
-					const tagIds = await Promise.all(tagPromises);
-					return await search.byTagIds(tagIds, startPosition, count);
+						const tagIds = await Promise.all(tagPromises);
+						return await search.byTagIds(tagIds, startPosition, count);
+					} else
+						throw {
+							event: 'search.tags',
+							message: `Too many tags, currently allowed up to ${config.search.maxTagSearch} tags per search`
+						};
 			}
 		},
 		randomByArtist: async ({name, count=10}, {random}) => {

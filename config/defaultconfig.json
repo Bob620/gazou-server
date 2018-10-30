@@ -26,6 +26,7 @@
   "search": {
     "maxIntersections": 10,
     "maxConcurrentSearches": 1,
-    "maxLifespan": 300
+    "maxLifespan": 300,
+    "maxTagSearch": 5
   }
 }
