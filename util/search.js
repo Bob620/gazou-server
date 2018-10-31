@@ -83,5 +83,5 @@ module.exports = {
 //			}
 		}
 	},
-	byTagIds: tagSearch.search
+	byTagIds: tagSearch.search.bind(tagSearch)
 };

@@ -55,7 +55,8 @@ class Search {
 			for (const search of this.data.searches)
 				search.resolve(await database.findImagesByTags(this.data.data, this.data.tags, search.startPosition, search.count));
 		else
-			search.reject('An error occurred during search request');
+			for (const search of this.data.searches)
+				search.reject('An error occurred during search request');
 
 		this.data.cleanup();
 	}
@@ -81,7 +82,7 @@ class IntersectionSearch {
 			currentSearches: new Map(),
 			searches: new Map(),
 			searchQueue: [],
-			generator: new IdGenerator(type, maxIntersections)
+			generator: IdGenerator(type, maxIntersections)
 		}
 	}
 
@@ -99,6 +100,7 @@ class IntersectionSearch {
 						await database.unlockImageIntersection(intersection, this.data.maxIntersectionLifespan);
 
 						await search.resolve(intersection, uuid);
+						break;
 					}
 				}
 

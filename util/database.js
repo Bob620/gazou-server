@@ -122,17 +122,19 @@ const database = {
 			normUuid.push(uuidModify.toRegular(lexUuid));
 		return normUuid;
 	},
-	setImageIntersectionMeta: async (intersectionStore, {tags, locked=true}) => {
+	setImageIntersectionMeta: async (intersectionStore, {tags, uuid, locked=true}) => {
 		const intersection = `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`;
-		await redis.hm.set(`${intersection}:${constants.redis.search.intersection.METADATA}`, 'locked', locked);
-		await redis.s.rem(`${intersection}:${constants.redis.search.intersection.TAGS}`, ...await redis.s.members(`${intersection}:${constants.redis.search.intersection.TAGS}`));
+		await redis.hm.set(`${intersection}:${constants.redis.search.intersection.METADATA}`, 'locked', locked, 'uuid', uuid);
+		const oldTags = await redis.s.members(`${intersection}:${constants.redis.search.intersection.TAGS}`);
+		if (oldTags.length > 0)
+			await redis.s.rem(`${intersection}:${constants.redis.search.intersection.TAGS}`, ...oldTags);
 		await redis.s.add(`${intersection}:${constants.redis.search.intersection.TAGS}`, ...tags);
 	},
 	getImageIntersectionMeta: async intersectionStore => {
 		const intersection = `${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}`;
-		let metadata = await redis.s.members(`${intersection}:${constants.redis.search.intersection.METADATA}`);
+		let metadata = await redis.h.getAll(`${intersection}:${constants.redis.search.intersection.METADATA}`);
 		metadata.tags = await redis.s.members(`${intersection}:${constants.redis.search.intersection.TAGS}`);
-		const lifespan = await redis.s.members(`${intersection}:${constants.redis.search.intersection.LIFESPAN}`);
+		const lifespan = await redis.get(`${intersection}:${constants.redis.search.intersection.LIFESPAN}`);
 		if (lifespan) {
 			metadata.expired = false;
 			metadata.expires = lifespan;
@@ -148,7 +150,7 @@ const database = {
 		return redis.h.set(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked', true);
 	},
 	unlockImageIntersection: async (intersectionStore, maxLifespan=60) => {
-		await redis.set(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}:${constants.redis.search.intersection.LIFESPAN}`, Date.now()+maxLifespan, 'EX', maxLifespan);
+		await redis.set(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.LIFESPAN}`, Date.now()+maxLifespan, 'EX', maxLifespan);
 		return await redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGEINTERSECTIONS}:${intersectionStore}:${constants.redis.search.intersection.METADATA}`, 'locked');
 	},
 	findImagesByTags: async (intersectionStore, tagIds, start=0, count=10) => {

@@ -285,7 +285,7 @@ module.exports = {
 			else
 				return [];
 		},
-		randomByTags: async ({tags=[], count=1}, {random}, {random}) => {
+		randomByTags: async ({tags=[], count=1}, {random}) => {
 			switch(tags.length) {
 				case 0:
 					return [];
