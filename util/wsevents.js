@@ -1,4 +1,5 @@
 const uuidv1 = require('uuid/v1');
+const uuidModify = require('./uuidmodify');
 
 const config = require('../config/config');
 const constants = require('./constants');
@@ -278,10 +279,13 @@ module.exports = {
 						};
 			}
 		},
-		randomByArtist: async ({name, count=1}, {random}) => {
-			const images = await database.countArtistImages();
+		randomByArtist: async ({artist, count=1}, {random}) => {
+			const artistId = await database.getArtistByName(artist);
+			if (artistId === undefined)
+				return [];
+			const images = await database.allArtistImages(artistId);
 			if (images && images.length > 0)
-				return random.sample(images, images.length < count ? images.length : count);
+				return random.sample(images, images.length < count ? images.length : count).map(uuidModify.toRegular);
 			else
 				return [];
 		},
@@ -290,9 +294,12 @@ module.exports = {
 				case 0:
 					return [];
 				case 1:
-					const images = await database.countTagImages();
+					const tagId = await database.getTagByName(tags[0]);
+					if (tagId === undefined)
+						return [];
+					const images = await database.allTagImages(tagId);
 					if (images && images.length > 0)
-						return random.sample(images, images.length < count ? images.length : count);
+						return random.sample(images, images.length < count ? images.length : count).map(uuidModify.toRegular);
 					return [];
 				default:
 					throw {
@@ -369,9 +376,9 @@ module.exports = {
 			return metadata;
 		},
 		random: async ({count=1}, {random}) => {
-			const images = database.countImages();
+			const images = database.allImages();
 			if (images && images.length > 0)
-				return random.sample(images, images.length < count ? images.length : count);
+				return random.sample(images, images.length < count ? images.length : count).map(uuidModify.toRegular);
 			return [];
 		}
 	},

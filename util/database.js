@@ -78,17 +78,17 @@ const database = {
 				redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${uuidModify.toLexical(uuid)}:${constants.redis.images.METADATA}`, ...Object.keys(metadata))
 			]);
 	},
-	countImages: () => {
-		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`);
+	allImages: () => {
+		return redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, 0, 9);
 	},
-	countArtistImages: artistId => {
-		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${constants.redis.search.ARTISTIMAGES}:${artistId}`);
+	allArtistImages: artistId => {
+		return redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.ARTISTIMAGES}:${artistId}`, 0, 9);
 	},
-	countTagImages: tagId => {
-		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}:${constants.redis.search.TAGIMAGES}:${tagId}`);
+	allTagImages: tagId => {
+		return redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`, 0, 9);
 	},
-	countIntersection: (type, intersection) => {
-		return redis.z.rank(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${type}:${intersection}`);
+	allIntersection: (type, intersection) => {
+		return redis.z.range(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${type}:${intersection}`, 0, 9);
 	},
 	findImagesByLex: async (minTimestamp, maxTimestamp, start=0, count=10) => {
 		const lexUuids = await redis.z.rangeByLex(`${constants.redis.DOMAIN}:${constants.redis.IMAGES}`, '['+uuidModify.timestampToUlid(minTimestamp), '['+`${uuidModify.timestampToUlid(maxTimestamp)}-ffff-ffffffffffff`, 'LIMIT', start, count);

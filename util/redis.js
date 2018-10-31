@@ -28,6 +28,7 @@ module.exports = {
 	z: {
 		add: promisify(client.zadd).bind(client),
 		card: promisify(client.zcard).bind(client),
+		count: promisify(client.zcount).bind(client),
 		rank: promisify(client.zrank).bind(client),
 		range: promisify(client.zrange).bind(client),
 		rangeByLex: promisify(client.zrangebylex).bind(client),
