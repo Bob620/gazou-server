@@ -21,7 +21,11 @@
   },
   "websocket": {
     "keyLocation": "",
-    "certLocation": ""
+    "certLocation": "",
+    "rateLimit": {
+      "duration": 10000,
+      "messages": 100
+    }
   },
   "search": {
     "maxIntersections": 10,
