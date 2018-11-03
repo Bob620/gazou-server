@@ -183,9 +183,9 @@ const database = {
 		return await redis.eval("local artistId = redis.call('zcard', KEYS[1]) redis.call('zadd', KEYS[2], artistId, KEYS[3]) return artistId", 3, `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
 	},
 	setArtistMetadata: async (artistId, {description, addLinks={}, removeLinks=[]}) => {
-		for (const [name, link] in addLinks)
+		for (const name in addLinks)
 			await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}:${artistId}:${constants.redis.artists.LINKS}`,
-				name, link
+				name, addLinks[name]
 			);
 
 		for (const name of removeLinks)

@@ -392,6 +392,17 @@ module.exports = {
 				return await database.getArtistMetadata(artistId);
 		}
 	},
+	setArtist: async ({artistName, metadata}) => {
+		const artistId = await database.getArtistIdByName(artistName);
+		if (artistId === undefined)
+			throw {
+				event: 'get.artist',
+				message: 'Unknown artist'
+			};
+		else
+			await database.setArtistMetadata(artistId, metadata);
+		return await database.getArtistMetadata(artistId);
+	},
 	has: {
 		singleHash: async ({hash}) => {
 			if (hash || typeof hash !== 'string' || hash.length !== 40)
