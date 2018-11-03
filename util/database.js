@@ -170,7 +170,7 @@ const database = {
 	removeImageFromTag: (uuid, tagId) => {
 		return redis.z.rem(`${constants.redis.DOMAIN}:${constants.redis.SEARCH}:${constants.redis.search.TAGIMAGES}:${tagId}`, uuidModify.toLexical(uuid));
 	},
-	getArtistByName: artistName => {
+	getArtistIdByName: artistName => {
 		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
 	},
 	addImageToArtist: (uuid, artistId, dateModified=Date.now()) => {
@@ -181,6 +181,29 @@ const database = {
 	},
 	createArtist: async artistName => {
 		return await redis.eval("local artistId = redis.call('zcard', KEYS[1]) redis.call('zadd', KEYS[2], artistId, KEYS[3]) return artistId", 3, `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, `${constants.redis.DOMAIN}:${constants.redis.ARTISTS}`, artistName);
+	},
+	setArtistMetadata: async (artistId, {description, addLinks={}, removeLinks=[]}) => {
+		for (const [name, link] in addLinks)
+			await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}:${artistId}:${constants.redis.artists.LINKS}`,
+				name, link
+			);
+
+		for (const name of removeLinks)
+			await redis.h.del(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}:${artistId}:${constants.redis.artists.LINKS}`,
+				name
+			);
+
+		if (description)
+			await redis.hm.set(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}:${artistId}:${constants.redis.artists.METADATA}`,
+				'description', description
+			);
+	},
+	getArtistMetadata: async artistId => {
+		let metadata = await redis.h.getAll(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}:${artistId}:${constants.redis.artists.METADATA}`);
+		metadata = metadata ? metadata : {};
+		metadata.links = await redis.h.getAll(`${constants.redis.DOMAIN}:${constants.redis.ARTISTS}:${artistId}:${constants.redis.artists.LINKS}`);
+		metadata.links = metadata.links ? metadata.links : [];
+		return metadata;
 	},
 	getTagByName: tagName => {
 		return redis.z.score(`${constants.redis.DOMAIN}:${constants.redis.TAGS}`, tagName);

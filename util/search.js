@@ -32,18 +32,18 @@ module.exports = {
 
 			if (oldMetadata) {
 				if (artist !== oldMetadata.artist) {
-					let oldArtistId = await database.getArtistByName(oldMetadata.artist);
+					let oldArtistId = await database.getArtistIdByName(oldMetadata.artist);
 					if (oldArtistId)
 						await database.removeImageFromArtist(uuid, oldArtistId);
 
-					let artistId = await database.getArtistByName(artist);
+					let artistId = await database.getArtistIdByName(artist);
 					if (!artistId)
 						artistId = await database.createArtist(artist);
 					await database.addImageToArtist(uuid, artistId, dateModified);
 				}
 			} else {
 				if (artist) {
-					let artistId = await database.getArtistByName(artist);
+					let artistId = await database.getArtistIdByName(artist);
 					if (!artistId) {
 						artistId = await database.createArtist(artist);
 					}
@@ -70,7 +70,7 @@ module.exports = {
 			}
 
 			if (artist) {
-				const artistId = await database.getArtistByName(artist);
+				const artistId = await database.getArtistIdByName(artist);
 
 				if (artistId)
 					await database.removeImageFromArtist(uuid, artistId);

@@ -37,7 +37,7 @@ module.exports = {
 			if (artist && oldMetadata.artist !== artist) {
 				newMetadata.artist = artist;
 
-//		    	if (!await database.getArtistByName(artist))
+//		    	if (!await database.getArtistIdByName(artist))
 //	    			await database.createArtist(artist);
 			}
 
@@ -185,7 +185,7 @@ module.exports = {
 							uploader: await database.getUserDisplayName(currentUser.id)
 						};
 
-	//	    			if (!await database.getArtistByName(artist))
+	//	    			if (!await database.getArtistIdByName(artist))
 	//		    			await database.createArtist(artist);
 
 	//			    	for (const tag of tags)
@@ -234,7 +234,7 @@ module.exports = {
 			return await database.findImagesByLex(min, max, startPosition, count);
 		},
 		artist: async ({name, count=10, startPosition=0}) => {
-			const artistId = await database.getArtistByName(name.toLowerCase());
+			const artistId = await database.getArtistIdByName(name.toLowerCase());
 			if (artistId)
 				return await database.findImagesByArtistId(artistId, startPosition, count);
 			throw {
@@ -280,7 +280,7 @@ module.exports = {
 			}
 		},
 		randomByArtist: async ({artist, count=1}, {random}) => {
-			const artistId = await database.getArtistByName(artist);
+			const artistId = await database.getArtistIdByName(artist);
 			if (artistId === undefined)
 				return [];
 			const images = await database.allArtistImages(artistId);
@@ -380,6 +380,16 @@ module.exports = {
 			if (images && images.length > 0)
 				return random.sample(images, images.length < count ? images.length : count).map(uuidModify.toRegular);
 			return [];
+		},
+		artist: async artist => {
+			const artistId = await database.getArtistIdByName(artist);
+			if (artistId === undefined)
+				throw {
+					event: 'get.artist',
+					message: 'Unknown artist'
+				};
+			else
+				return await database.getArtistMetadata(artistId);
 		}
 	},
 	has: {

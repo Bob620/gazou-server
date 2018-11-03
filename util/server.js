@@ -210,7 +210,7 @@ const server = http.createServer(options, async (req, res) => {
 					case 'artist':
 						try {
 							const name = args.name.toLowerCase();
-							const artistId = await database.getArtistByName(name);
+							const artistId = await database.getArtistIdByName(name);
 							if (artistId)
 								sendResponse(200, await database.findImagesByArtistId(artistId, args.startposition, args.count));
 							else

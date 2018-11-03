@@ -1,11 +1,15 @@
 {
   "redis": {
     "DOMAIN": "gazou",
-    "IMAGES": "images",
-    "ARTISTS": "artists",
     "UPLOADERS": "uploaders",
     "TAGS": "tags",
     "HASHES": "hashes",
+    "ARTISTS": "artists",
+    "artists": {
+      "METADATA": "metadata",
+      "LINKS": "links"
+    },
+    "IMAGES": "images",
     "images": {
       "METADATA": "metadata",
       "TAGS": "tags"
