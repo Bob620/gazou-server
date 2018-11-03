@@ -24,7 +24,7 @@
     "certLocation": "",
     "rateLimit": {
       "duration": 10000,
-      "messages": 100
+      "messages": 50
     }
   },
   "search": {

@@ -13,7 +13,7 @@ class Sockets {
 			random,
 			clients: new Map(),
 			heartbeat: setInterval(() => {
-				for (const [key, client] of this.data.clients) {
+				for (const [, client] of this.data.clients) {
 					if (client.isAlive) {
 						client.isAlive = false;
 						client.ws.ping();
