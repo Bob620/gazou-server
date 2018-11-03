@@ -15,8 +15,8 @@ class Sockets {
 			heartbeat: setInterval(() => {
 				for (const [, client] of this.data.clients) {
 					if (client.isAlive) {
-						client.isAlive = false;
-						client.ws.ping();
+//						client.isAlive = false;
+//						client.ws.ping();
 					} else {
 						client.ws.terminate();
 					}
@@ -64,7 +64,7 @@ class Sockets {
 					}
 				}
 
-				if (responseMessage.data.beginAuth)
+				if (responseMessage.data && responseMessage.data.beginAuth)
 					client.id = message.data.id;
 
 				if (responseMessage.data && responseMessage.data.authed)
